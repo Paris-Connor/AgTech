@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Drum Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .play-btn:active {
+            transform: translateY(0);
+        }
+
+        .play-btn.playing {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .tempo-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tempo-control label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .tempo-control input {
+            width: 150px;
+        }
+
+        .tempo-value {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 60px;
+        }
+
+        .grid-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .instrument-label {
+            min-width: 100px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .beats {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .beat {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .beat:hover {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        .beat.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .beat.playing {
+            animation: pulse 0.2s ease-in-out;
+        }
+
+        .beat.current-column {
+            border-color: #f5576c;
+            border-width: 3px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .info-section {
+            background: #f0f4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-section ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info-section li {
+            margin-bottom: 5px;
+        }
+
+        .clear-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥁 Drum Machine</h1>
+        <p class="subtitle">Click the squares to create your beat pattern!</p>
+        
+        <div class="controls">
+            <button class="play-btn" id="playBtn">▶ Play</button>
+            <button class="clear-btn" id="clearBtn">Clear All</button>
+            <div class="tempo-control">
+                <label for="tempo">Tempo:</label>
+                <input type="range" id="tempo" min="60" max="180" value="120">
+                <span class="tempo-value" id="tempoValue">120 BPM</span>
+            </div>
+        </div>
+
+        <div class="grid-container" id="grid"></div>
+
+        <div class="info-section">
+            <h3>How to Use:</h3>
+            <ul>
+                <li><strong>Click squares</strong> to activate beats in the pattern</li>
+                <li><strong>Press Play</strong> to hear your rhythm loop</li>
+                <li><strong>Adjust tempo</strong> to change the speed (60-180 BPM)</li>
+                <li><strong>Mix different drums</strong> to create complex rhythms</li>
+            </ul>
+            <p style="margin-top: 15px;">
+                <strong>Music Theory Tip:</strong> The grid represents 16th notes in a measure of 4/4 time. 
+                Each column is one 16th note. Four beats make one quarter note, which is one beat in common time.
+                Try starting with a simple kick-snare pattern on beats 1 and 3!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const instruments = [
+            { name: 'Kick', frequency: 60 },
+            { name: 'Snare', frequency: 200 },
+            { name: 'Hi-Hat', frequency: 800 },
+            { name: 'Clap', frequency: 400 }
+        ];
+
+        const beats = 16;
+        let pattern = instruments.map(() => Array(beats).fill(false));
+        let isPlaying = false;
+        let currentBeat = 0;
+        let tempo = 120;
+        let intervalId = null;
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function createDrumSound(instrument) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            const now = audioContext.currentTime;
+
+            if (instrument.name === 'Kick') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+                gain.gain.setValueAtTime(1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            } else if (instrument.name === 'Snare') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(100, now);
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(1000, now);
+                gain.gain.setValueAtTime(0.7, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            } else if (instrument.name === 'Hi-Hat') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(2000, now);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            } else if (instrument.name === 'Clap') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, now);
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1500, now);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            }
+
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            instruments.forEach((instrument, instIndex) => {
+                const row = document.createElement('div');
+                row.className = 'grid-row';
+
+                const label = document.createElement('div');
+                label.className = 'instrument-label';
+                label.textContent = instrument.name;
+                row.appendChild(label);
+
+                const beatsContainer = document.createElement('div');
+                beatsContainer.className = 'beats';
+
+                for (let beatIndex = 0; beatIndex < beats; beatIndex++) {
+                    const beat = document.createElement('div');
+                    beat.className = 'beat';
+                    beat.dataset.instrument = instIndex;
+                    beat.dataset.beat = beatIndex;
+
+                    if (pattern[instIndex][beatIndex]) {
+                        beat.classList.add('active');
+                    }
+
+                    beat.addEventListener('click', () => {
+                        pattern[instIndex][beatIndex] = !pattern[instIndex][beatIndex];
+                        beat.classList.toggle('active');
+                        createDrumSound(instrument);
+                    });
+
+                    beatsContainer.appendChild(beat);
+                }
+
+                row.appendChild(beatsContainer);
+                grid.appendChild(row);
+            });
+        }
+
+        function playBeat() {
+            const allBeats = document.querySelectorAll('.beat');
+            
+            allBeats.forEach(beat => {
+                beat.classList.remove('current-column');
+            });
+
+            instruments.forEach((instrument, instIndex) => {
+                const beatElement = document.querySelector(
+                    `.beat[data-instrument="${instIndex}"][data-beat="${currentBeat}"]`
+                );
+                
+                beatElement.classList.add('current-column');
+
+                if (pattern[instIndex][currentBeat]) {
+                    createDrumSound(instrument);
+                    beatElement.classList.add('playing');
+                    setTimeout(() => beatElement.classList.remove('playing'), 200);
+                }
+            });
+
+            currentBeat = (currentBeat + 1) % beats;
+        }
+
+        function togglePlay() {
+            const playBtn = document.getElementById('playBtn');
+            
+            if (isPlaying) {
+                clearInterval(intervalId);
+                isPlaying = false;
+                playBtn.textContent = '▶ Play';
+                playBtn.classList.remove('playing');
+                document.querySelectorAll('.beat').forEach(b => b.classList.remove('current-column'));
+            } else {
+                isPlaying = true;
+                playBtn.textContent = '⏸ Pause';
+                playBtn.classList.add('playing');
+                const interval = (60 / tempo) * 1000 / 4; // 16th notes
+                intervalId = setInterval(playBeat, interval);
+            }
+        }
+
+        function updateTempo() {
+            const tempoSlider = document.getElementById('tempo');
+            const tempoValue = document.getElementById('tempoValue');
+            tempo = parseInt(tempoSlider.value);
+            tempoValue.textContent = tempo + ' BPM';
+
+            if (isPlaying) {
+                clearInterval(intervalId);
+                const interval = (60 / tempo) * 1000 / 4;
+                intervalId = setInterval(playBeat, interval);
+            }
+        }
+
+        function clearAll() {
+            pattern = instruments.map(() => Array(beats).fill(false));
+            createGrid();
+        }
+
+        document.getElementById('playBtn').addEventListener('click', togglePlay);
+        document.getElementById('tempo').addEventListener('input', updateTempo);
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+        createGrid();
+    </script>
+</body>
+</html>
