@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGuesser Challenge</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .clue-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .clue-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clue-icon {
+            font-size: 28px;
+        }
+
+        .location-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: #f0f0f0;
+            display: block;
+        }
+
+        .map-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .map-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .feedback-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feedback-distance {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feedback-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .start-screen, .game-over {
+            background: white;
+            border-radius: 12px;
+            padding: 60px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 100px auto;
+        }
+
+        .start-screen h2, .game-over h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .start-screen p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .game-over {
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+
+        .final-score {
+            font-size: 72px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .performance {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .game-screen.active {
+            display: block;
+        }
+
+        .instruction {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+
+            #map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="start-screen" id="startScreen">
+            <h1>🌍 GeoGuesser Challenge</h1>
+            <h2>Test Your Geography Skills!</h2>
+            <p>
+                You'll see a photo of a famous location somewhere in the world.<br>
+                Study the image and click on the map where you think it is.<br>
+                The closer your guess, the more points you earn!<br>
+                <br>
+                <strong>5 Rounds • Explore the World</strong>
+            </p>
+            <button class="btn btn-primary" onclick="startGame()">Start Adventure</button>
+        </div>
+
+        <div class="game-screen" id="gameScreen">
+            <header>
+                <h1>🌍 GeoGuesser Challenge</h1>
+                <p class="subtitle">Where in the world are you?</p>
+            </header>
+
+            <div class="game-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Round</div>
+                    <div class="stat-value" id="roundDisplay">1/5</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Score</div>
+                    <div class="stat-value" id="scoreDisplay">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Best Distance</div>
+                    <div class="stat-value" id="bestDistance">-</div>
+                </div>
+            </div>
+
+            <div class="instruction">
+                Click anywhere on the map to place your guess, then submit!
+            </div>
+
+            <div class="feedback" id="feedback">
+                <div class="feedback-header">
+                    <div class="feedback-title" id="feedbackTitle">Great Guess!</div>
+                    <div class="feedback-distance" id="feedbackDistance">250 km</div>
+                </div>
+                <div class="feedback-details">
+                    <div class="detail-card">
+                        <div class="detail-label">Points Earned</div>
+                        <div class="detail-value" id="pointsEarned">850</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">Actual Location</div>
+                        <div class="detail-value" id="actualLocation">Paris</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">Accuracy</div>
+                        <div class="detail-value" id="accuracy">95%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-container">
+                <div class="clue-section">
+                    <div class="clue-title">
+                        <span class="clue-icon">📸</span>
+                        <span>Where is this?</span>
+                    </div>
+                    <img id="locationImage" class="location-image" src="" alt="Mystery Location">
+                </div>
+
+                <div class="map-section">
+                    <div class="map-title">🗺️ Make Your Guess</div>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="submitBtn" onclick="submitGuess()" disabled>Submit Guess</button>
+                <button class="btn btn-secondary" id="nextBtn" onclick="nextRound()" style="display: none;">Next Round</button>
+            </div>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>🎉 Adventure Complete!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="performance" id="performance">You're a geography master!</div>
+            <button class="btn btn-primary" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const locations = [
+            {
+                name: "Eiffel Tower, Paris",
+                lat: 48.8584,
+                lng: 2.2945,
+                image: "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800"
+            },
+            {
+                name: "Great Wall, China",
+                lat: 40.4319,
+                lng: 116.5704,
+                image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800"
+            },
+            {
+                name: "Statue of Liberty, New York",
+                lat: 40.6892,
+                lng: -74.0445,
+                image: "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=800"
+            },
+            {
+                name: "Sydney Opera House, Australia",
+                lat: -33.8568,
+                lng: 151.2153,
+                image: "https://images.unsplash.com/photo-1523059623039-a9ed027e7fad?w=800"
+            },
+            {
+                name: "Machu Picchu, Peru",
+                lat: -13.1631,
+                lng: -72.5450,
+                image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800"
+            },
+            {
+                name: "Taj Mahal, India",
+                lat: 27.1751,
+                lng: 78.0421,
+                image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800"
+            },
+            {
+                name: "Christ the Redeemer, Brazil",
+                lat: -22.9519,
+                lng: -43.2105,
+                image: "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800"
+            },
+            {
+                name: "Pyramids of Giza, Egypt",
+                lat: 29.9792,
+                lng: 31.1342,
+                image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=800"
+            },
+            {
+                name: "Big Ben, London",
+                lat: 51.5007,
+                lng: -0.1246,
+                image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800"
+            },
+            {
+                name: "Mount Fuji, Japan",
+                lat: 35.3606,
+                lng: 138.7278,
+                image: "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=800"
+            },
+            {
+                name: "Colosseum, Rome",
+                lat: 41.8902,
+                lng: 12.4922,
+                image: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800"
+            },
+            {
+                name: "Burj Khalifa, Dubai",
+                lat: 25.1972,
+                lng: 55.2744,
+                image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800"
+            },
+            {
+                name: "Stonehenge, England",
+                lat: 51.1789,
+                lng: -1.8262,
+                image: "https://images.unsplash.com/photo-1599833975787-5fc7f5d48e27?w=800"
+            },
+            {
+                name: "Golden Gate Bridge, San Francisco",
+                lat: 37.8199,
+                lng: -122.4783,
+                image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800"
+            },
+            {
+                name: "Petra, Jordan",
+                lat: 30.3285,
+                lng: 35.4444,
+                image: "https://images.unsplash.com/photo-1579606032821-4e6c17142986?w=800"
+            },
+            {
+                name: "Acropolis, Athens",
+                lat: 37.9715,
+                lng: 23.7269,
+                image: "https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?w=800"
+            },
+            {
+                name: "Angkor Wat, Cambodia",
+                lat: 13.4125,
+                lng: 103.8670,
+                image: "https://images.unsplash.com/photo-1570366583862-f91883984fde?w=800"
+            },
+            {
+                name: "Neuschwanstein Castle, Germany",
+                lat: 47.5576,
+                lng: 10.7498,
+                image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800"
+            },
+            {
+                name: "CN Tower, Toronto",
+                lat: 43.6426,
+                lng: -79.3871,
+                image: "https://images.unsplash.com/photo-1517935706615-2717063c2225?w=800"
+            },
+            {
+                name: "Sagrada Familia, Barcelona",
+                lat: 41.4036,
+                lng: 2.1744,
+                image: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800"
+            },
+            {
+                name: "Niagara Falls, Canada/USA",
+                lat: 43.0896,
+                lng: -79.0849,
+                image: "https://images.unsplash.com/photo-1489447068241-b3490214e879?w=800"
+            },
+            {
+                name: "Table Mountain, Cape Town",
+                lat: -33.9628,
+                lng: 18.4098,
+                image: "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800"
+            },
+            {
+                name: "Chichen Itza, Mexico",
+                lat: 20.6843,
+                lng: -88.5678,
+                image: "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=800"
+            },
+            {
+                name: "Brandenburg Gate, Berlin",
+                lat: 52.5163,
+                lng: 13.3777,
+                image: "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=800"
+            },
+            {
+                name: "Space Needle, Seattle",
+                lat: 47.6205,
+                lng: -122.3493,
+                image: "https://images.unsplash.com/photo-1605648916319-cf082f7524a1?w=800"
+            },
+            {
+                name: "Alhambra, Spain",
+                lat: 37.1761,
+                lng: -3.5881,
+                image: "https://images.unsplash.com/photo-1576885935756-ca11d0ac50cb?w=800"
+            },
+            {
+                name: "Victoria Falls, Zimbabwe/Zambia",
+                lat: -17.9243,
+                lng: 25.8572,
+                image: "https://images.unsplash.com/photo-1546369876-ca4b3e20c83e?w=800"
+            },
+            {
+                name: "Ha Long Bay, Vietnam",
+                lat: 20.9101,
+                lng: 107.1839,
+                image: "https://images.unsplash.com/photo-1528127269322-539801943592?w=800"
+            },
+            {
+                name: "Santorini, Greece",
+                lat: 36.3932,
+                lng: 25.4615,
+                image: "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=800"
+            },
+            {
+                name: "Moai Statues, Easter Island",
+                lat: -27.1127,
+                lng: -109.3497,
+                image: "https://images.unsplash.com/photo-1611604548018-d56bbd85d681?w=800"
+            },
+            {
+                name: "Forbidden City, Beijing",
+                lat: 39.9163,
+                lng: 116.3972,
+                image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800"
+            },
+            {
+                name: "Arc de Triomphe, Paris",
+                lat: 48.8738,
+                lng: 2.2950,
+                image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800"
+            },
+            {
+                name: "Times Square, New York",
+                lat: 40.7580,
+                lng: -73.9855,
+                image: "https://images.unsplash.com/photo-1519121785383-3229633bb75b?w=800"
+            },
+            {
+                name: "Matterhorn, Switzerland",
+                lat: 45.9763,
+                lng: 7.6586,
+                image: "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800"
+            },
+            {
+                name: "Tower Bridge, London",
+                lat: 51.5055,
+                lng: -0.0754,
+                image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800"
+            },
+            {
+                name: "Blue Mosque, Istanbul",
+                lat: 41.0054,
+                lng: 28.9768,
+                image: "https://images.unsplash.com/photo-1527838832700-5059252407fa?w=800"
+            },
+            {
+                name: "Grand Canyon, USA",
+                lat: 36.1069,
+                lng: -112.1129,
+                image: "https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=800"
+            },
+            {
+                name: "Leaning Tower of Pisa, Italy",
+                lat: 43.7230,
+                lng: 10.3966,
+                image: "https://images.unsplash.com/photo-1568084680786-a84f91d1153c?w=800"
+            },
+            {
+                name: "Mount Rushmore, USA",
+                lat: 43.8791,
+                lng: -103.4591,
+                image: "https://images.unsplash.com/photo-1556665219-d510eddc0a80?w=800"
+            },
+            {
+                name: "Palace of Versailles, France",
+                lat: 48.8049,
+                lng: 2.1204,
+                image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800"
+            },
+            {
+                name: "St. Basil's Cathedral, Moscow",
+                lat: 55.7525,
+                lng: 37.6231,
+                image: "https://images.unsplash.com/photo-1513326738677-b964603b136d?w=800"
+            },
+            {
+                name: "Iguazu Falls, Argentina/Brazil",
+                lat: -25.6953,
+                lng: -54.4367,
+                image: "https://images.unsplash.com/photo-1618083707368-b3823daa2726?w=800"
+            },
+            {
+                name: "Banff National Park, Canada",
+                lat: 51.4968,
+                lng: -115.9281,
+                image: "https://images.unsplash.com/photo-1504693052527-848ac0f0c19e?w=800"
+            },
+            {
+                name: "Bagan Temples, Myanmar",
+                lat: 21.1717,
+                lng: 94.8575,
+                image: "https://images.unsplash.com/photo-1570366583862-f91883984fde?w=800"
+            }
+        ];
+
+        let map, guessMarker, actualMarker, guessLine;
+        let gameState = {
+            round: 1,
+            maxRounds: 5,
+            score: 0,
+            currentLocation: null,
+            guessLatLng: null,
+            usedLocations: [],
+            bestDistance: Infinity,
+            roundActive: false
+        };
+
+        function initMap() {
+            map = L.map('map').setView([20, 0], 2);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 18,
+            }).addTo(map);
+
+            map.on('click', function(e) {
+                if (!gameState.roundActive) return;
+
+                gameState.guessLatLng = e.latlng;
+
+                if (guessMarker) {
+                    map.removeLayer(guessMarker);
+                }
+
+                guessMarker = L.marker([e.latlng.lat, e.latlng.lng], {
+                    icon: L.icon({
+                        iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iNDUiIHZpZXdCb3g9IjAgMCAzMCA0NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTUgMEMxMC4wMjk0IDAgNiA0LjAyOTQzIDYgOUM2IDEzLjk3MDYgMTUgMjggMTUgMjhDMTUgMjggMjQgMTMuOTcwNiAyNCA5QzI0IDQuMDI5NDMgMTkuOTcwNiAwIDE1IDBaIiBmaWxsPSIjRkYzQjMwIi8+PGNpcmNsZSBjeD0iMTUiIGN5PSI5IiByPSI0IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
+                        iconSize: [30, 45],
+                        iconAnchor: [15, 45]
+                    })
+                }).addTo(map);
+
+                document.getElementById('submitBtn').disabled = false;
+            });
+        }
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function calculatePoints(distance) {
+            // Max points for being within 100km, decreasing exponentially
+            if (distance < 10) return 1000;
+            if (distance < 50) return 900;
+            if (distance < 100) return 800;
+            if (distance < 250) return 700;
+            if (distance < 500) return 600;
+            if (distance < 1000) return 400;
+            if (distance < 2500) return 200;
+            if (distance < 5000) return 100;
+            return 50;
+        }
+
+        function getRandomLocation() {
+            const available = locations.filter(loc => !gameState.usedLocations.includes(loc.name));
+            if (available.length === 0) return null;
+            const location = available[Math.floor(Math.random() * available.length)];
+            gameState.usedLocations.push(location.name);
+            return location;
+        }
+
+        function startGame() {
+            gameState = {
+                round: 1,
+                maxRounds: 5,
+                score: 0,
+                currentLocation: null,
+                guessLatLng: null,
+                usedLocations: [],
+                bestDistance: Infinity,
+                roundActive: true
+            };
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('active');
+            document.getElementById('gameOver').classList.remove('show');
+
+            // Destroy existing map if it exists
+            if (map) {
+                map.remove();
+                map = null;
+            }
+
+            // Reset markers
+            guessMarker = null;
+            actualMarker = null;
+            guessLine = null;
+
+            initMap();
+            startRound();
+        }
+
+        function startRound() {
+            gameState.roundActive = true;
+            gameState.guessLatLng = null;
+            gameState.currentLocation = getRandomLocation();
+
+            if (guessMarker) map.removeLayer(guessMarker);
+            if (actualMarker) map.removeLayer(actualMarker);
+            if (guessLine) map.removeLayer(guessLine);
+            guessMarker = null;
+
+            map.setView([20, 0], 2);
+
+            // Display the location image
+            const locationImage = document.getElementById('locationImage');
+            locationImage.src = gameState.currentLocation.image;
+
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('nextBtn').style.display = 'none';
+
+            updateDisplay();
+        }
+
+        function submitGuess() {
+            if (!gameState.guessLatLng || !gameState.roundActive) return;
+
+            gameState.roundActive = false;
+
+            const distance = calculateDistance(
+                gameState.guessLatLng.lat,
+                gameState.guessLatLng.lng,
+                gameState.currentLocation.lat,
+                gameState.currentLocation.lng
+            );
+
+            const points = calculatePoints(distance);
+            gameState.score += points;
+
+            if (distance < gameState.bestDistance) {
+                gameState.bestDistance = distance;
+            }
+
+            // Show actual location
+            actualMarker = L.marker([gameState.currentLocation.lat, gameState.currentLocation.lng], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iNDUiIHZpZXdCb3g9IjAgMCAzMCA0NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTUgMEMxMC4wMjk0IDAgNiA0LjAyOTQzIDYgOUM2IDEzLjk3MDYgMTUgMjggMTUgMjhDMTUgMjggMjQgMTMuOTcwNiAyNCA5QzI0IDQuMDI5NDMgMTkuOTcwNiAwIDE1IDBaIiBmaWxsPSIjNDBDMDU3Ii8+PGNpcmNsZSBjeD0iMTUiIGN5PSI5IiByPSI0IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
+                    iconSize: [30, 45],
+                    iconAnchor: [15, 45]
+                })
+            }).addTo(map);
+
+            // Draw line between guess and actual
+            guessLine = L.polyline([
+                [gameState.guessLatLng.lat, gameState.guessLatLng.lng],
+                [gameState.currentLocation.lat, gameState.currentLocation.lng]
+            ], {
+                color: '#FF3B30',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            // Fit bounds to show both markers
+            const bounds = L.latLngBounds([
+                [gameState.guessLatLng.lat, gameState.guessLatLng.lng],
+                [gameState.currentLocation.lat, gameState.currentLocation.lng]
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+
+            // Show feedback
+            let title = '';
+            let accuracy = 0;
+
+            if (distance < 10) {
+                title = '🎯 Incredible! Nearly Perfect!';
+                accuracy = 100;
+            } else if (distance < 50) {
+                title = '🌟 Excellent Guess!';
+                accuracy = 95;
+            } else if (distance < 250) {
+                title = '👍 Great Job!';
+                accuracy = 85;
+            } else if (distance < 500) {
+                title = '✓ Good Guess!';
+                accuracy = 70;
+            } else if (distance < 1000) {
+                title = '📍 Not Bad!';
+                accuracy = 50;
+            } else if (distance < 2500) {
+                title = '🌍 Keep Trying!';
+                accuracy = 30;
+            } else {
+                title = '🗺️ Way Off!';
+                accuracy = 10;
+            }
+
+            document.getElementById('feedbackTitle').textContent = title;
+            document.getElementById('feedbackDistance').textContent = Math.round(distance) + ' km';
+            document.getElementById('pointsEarned').textContent = points;
+            document.getElementById('actualLocation').textContent = gameState.currentLocation.name;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('feedback').classList.add('show');
+
+            document.getElementById('submitBtn').style.display = 'none';
+
+            if (gameState.round < gameState.maxRounds) {
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                setTimeout(endGame, 2000);
+            }
+
+            updateDisplay();
+        }
+
+        function nextRound() {
+            gameState.round++;
+            startRound();
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOver').classList.add('show');
+
+            const avgScore = gameState.score / gameState.maxRounds;
+            let performance = '';
+
+            if (avgScore >= 800) {
+                performance = '🏆 Outstanding! You\'re a geography master!';
+            } else if (avgScore >= 600) {
+                performance = '🌟 Excellent work! Impressive knowledge!';
+            } else if (avgScore >= 400) {
+                performance = '👍 Good job! Keep exploring!';
+            } else {
+                performance = '🗺️ Nice try! Play again to improve!';
+            }
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('performance').textContent = performance;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function updateDisplay() {
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/${gameState.maxRounds}`;
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('bestDistance').textContent =
+                gameState.bestDistance === Infinity ? '-' : Math.round(gameState.bestDistance) + ' km';
+        }
+    </script>
+</body>
+</html>
