@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match Challenge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .color-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .color-box {
+            text-align: center;
+        }
+
+        .color-display {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-display.blur {
+            filter: blur(20px);
+        }
+
+        .color-display::after {
+            content: '?';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+
+        .color-display.revealed::after {
+            display: none;
+        }
+
+        .color-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .picker-section {
+            margin-bottom: 25px;
+        }
+
+        .picker-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .native-picker {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #redSlider {
+            background: linear-gradient(to right, #000, #ff0000);
+        }
+
+        #greenSlider {
+            background: linear-gradient(to right, #000, #00ff00);
+        }
+
+        #blueSlider {
+            background: linear-gradient(to right, #000, #0000ff);
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .feedback-accuracy {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .feedback-message {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .feedback-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .detail-box {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .start-screen h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .start-screen p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .game-screen.active {
+            display: block;
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 40px 0;
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+
+        .game-over h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 64px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .performance {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Match Challenge</h1>
+        <p class="subtitle">Match the target color as closely as you can!</p>
+
+        <div class="start-screen" id="startScreen">
+            <h2>How to Play</h2>
+            <p>
+                You'll be shown a target color that you need to match.<br>
+                Use the color picker and RGB sliders to create your best match.<br>
+                The closer your match, the higher your score!<br>
+                <br>
+                <strong>5 rounds | 30 seconds each</strong>
+            </p>
+            <button class="btn btn-primary" onclick="startGame()" style="max-width: 300px;">Start Game</button>
+        </div>
+
+        <div class="game-screen" id="gameScreen">
+            <div class="game-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Round</div>
+                    <div class="stat-value" id="roundDisplay">1/5</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="scoreDisplay">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="timerDisplay">30</div>
+                </div>
+            </div>
+
+            <div class="color-comparison">
+                <div class="color-box">
+                    <div class="color-display revealed" id="targetColor"></div>
+                    <div class="color-label">Target Color</div>
+                </div>
+                <div class="color-box">
+                    <div class="color-display revealed" id="yourColor"></div>
+                    <div class="color-label">Your Color</div>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback">
+                <div class="feedback-title" id="feedbackTitle">Perfect Match!</div>
+                <div class="feedback-accuracy" id="feedbackAccuracy">100%</div>
+                <div class="feedback-message" id="feedbackMessage">Incredible!</div>
+                <div class="feedback-details">
+                    <div class="detail-box">
+                        <div class="detail-label">Points Earned</div>
+                        <div class="detail-value" id="pointsEarned">100</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Time Bonus</div>
+                        <div class="detail-value" id="timeBonus">+20</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">RGB Diff</div>
+                        <div class="detail-value" id="rgbDiff">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="picker-section">
+                <label>Pick Your Color</label>
+                <input type="color" id="nativePicker" class="native-picker" value="#808080">
+            </div>
+
+            <div class="picker-section">
+                <label>RGB Sliders</label>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Red</span>
+                        <span id="redValue">128</span>
+                    </div>
+                    <input type="range" min="0" max="255" value="128" class="slider" id="redSlider">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Green</span>
+                        <span id="greenValue">128</span>
+                    </div>
+                    <input type="range" min="0" max="255" value="128" class="slider" id="greenSlider">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Blue</span>
+                        <span id="blueValue">128</span>
+                    </div>
+                    <input type="range" min="0" max="255" value="128" class="slider" id="blueSlider">
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn btn-primary" id="submitBtn" onclick="submitGuess()">Submit Guess</button>
+                <button class="btn btn-secondary" id="nextBtn" onclick="nextRound()" style="display: none;">Next Round</button>
+            </div>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="performance" id="performance">Amazing job!</div>
+            <button class="btn btn-primary" onclick="restartGame()" style="max-width: 300px;">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const nativePicker = document.getElementById('nativePicker');
+        const redSlider = document.getElementById('redSlider');
+        const greenSlider = document.getElementById('greenSlider');
+        const blueSlider = document.getElementById('blueSlider');
+        const targetColorEl = document.getElementById('targetColor');
+        const yourColorEl = document.getElementById('yourColor');
+        const redValue = document.getElementById('redValue');
+        const greenValue = document.getElementById('greenValue');
+        const blueValue = document.getElementById('blueValue');
+
+        let gameState = {
+            round: 1,
+            maxRounds: 5,
+            score: 0,
+            timeLeft: 30,
+            timerInterval: null,
+            targetColor: { r: 0, g: 0, b: 0 },
+            roundActive: false
+        };
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function updateColor() {
+            const r = parseInt(redSlider.value);
+            const g = parseInt(greenSlider.value);
+            const b = parseInt(blueSlider.value);
+
+            redValue.textContent = r;
+            greenValue.textContent = g;
+            blueValue.textContent = b;
+
+            const hex = rgbToHex(r, g, b);
+            yourColorEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            nativePicker.value = hex;
+        }
+
+        function updateFromNativePicker() {
+            const rgb = hexToRgb(nativePicker.value);
+            if (rgb) {
+                redSlider.value = rgb.r;
+                greenSlider.value = rgb.g;
+                blueSlider.value = rgb.b;
+                updateColor();
+            }
+        }
+
+        function generateRandomColor() {
+            return {
+                r: Math.floor(Math.random() * 256),
+                g: Math.floor(Math.random() * 256),
+                b: Math.floor(Math.random() * 256)
+            };
+        }
+
+        function calculateAccuracy(target, guess) {
+            const diff = Math.abs(target.r - guess.r) +
+                        Math.abs(target.g - guess.g) +
+                        Math.abs(target.b - guess.b);
+            const maxDiff = 255 * 3;
+            return Math.max(0, 100 - (diff / maxDiff * 100));
+        }
+
+        function startGame() {
+            gameState = {
+                round: 1,
+                maxRounds: 5,
+                score: 0,
+                timeLeft: 30,
+                timerInterval: null,
+                targetColor: { r: 0, g: 0, b: 0 },
+                roundActive: true
+            };
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('active');
+            document.getElementById('gameOver').classList.remove('show');
+
+            startRound();
+        }
+
+        function startRound() {
+            gameState.roundActive = true;
+            gameState.timeLeft = 30;
+            gameState.targetColor = generateRandomColor();
+
+            targetColorEl.style.backgroundColor = `rgb(${gameState.targetColor.r}, ${gameState.targetColor.g}, ${gameState.targetColor.b})`;
+            targetColorEl.classList.add('revealed');
+            targetColorEl.classList.remove('blur');
+
+            redSlider.value = 128;
+            greenSlider.value = 128;
+            blueSlider.value = 128;
+            updateColor();
+
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('submitBtn').style.display = 'block';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('nextBtn').style.display = 'none';
+
+            updateDisplay();
+            startTimer();
+        }
+
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('timerDisplay').textContent = gameState.timeLeft;
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    if (gameState.roundActive) {
+                        submitGuess();
+                    }
+                }
+            }, 1000);
+        }
+
+        function submitGuess() {
+            if (!gameState.roundActive) return;
+
+            gameState.roundActive = false;
+            clearInterval(gameState.timerInterval);
+
+            const guess = {
+                r: parseInt(redSlider.value),
+                g: parseInt(greenSlider.value),
+                b: parseInt(blueSlider.value)
+            };
+
+            const accuracy = calculateAccuracy(gameState.targetColor, guess);
+            const basePoints = Math.round(accuracy);
+            const timeBonus = Math.round(gameState.timeLeft / 2);
+            const totalPoints = basePoints + timeBonus;
+
+            gameState.score += totalPoints;
+
+            targetColorEl.classList.remove('blur');
+            targetColorEl.classList.add('revealed');
+
+            const rgbDiff = Math.abs(gameState.targetColor.r - guess.r) +
+                           Math.abs(gameState.targetColor.g - guess.g) +
+                           Math.abs(gameState.targetColor.b - guess.b);
+
+            let message = '';
+            if (accuracy >= 98) message = 'Incredible! Almost perfect!';
+            else if (accuracy >= 90) message = 'Excellent match!';
+            else if (accuracy >= 75) message = 'Great job!';
+            else if (accuracy >= 50) message = 'Not bad, keep trying!';
+            else message = 'Keep practicing!';
+
+            document.getElementById('feedbackAccuracy').textContent = accuracy.toFixed(1) + '%';
+            document.getElementById('feedbackMessage').textContent = message;
+            document.getElementById('pointsEarned').textContent = basePoints;
+            document.getElementById('timeBonus').textContent = '+' + timeBonus;
+            document.getElementById('rgbDiff').textContent = rgbDiff;
+            document.getElementById('feedback').classList.add('show');
+
+            document.getElementById('submitBtn').style.display = 'none';
+
+            if (gameState.round < gameState.maxRounds) {
+                document.getElementById('nextBtn').style.display = 'block';
+            } else {
+                setTimeout(endGame, 2000);
+            }
+
+            updateDisplay();
+        }
+
+        function nextRound() {
+            gameState.round++;
+            startRound();
+        }
+
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOver').classList.add('show');
+
+            const avgScore = gameState.score / gameState.maxRounds;
+            let performance = '';
+            if (avgScore >= 90) performance = 'Outstanding! You have an incredible eye for color!';
+            else if (avgScore >= 75) performance = 'Excellent work! Very impressive!';
+            else if (avgScore >= 60) performance = 'Good job! Keep practicing!';
+            else performance = 'Nice try! Play again to improve!';
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('performance').textContent = performance;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function updateDisplay() {
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/${gameState.maxRounds}`;
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('timerDisplay').textContent = gameState.timeLeft;
+        }
+
+        redSlider.addEventListener('input', updateColor);
+        greenSlider.addEventListener('input', updateColor);
+        blueSlider.addEventListener('input', updateColor);
+        nativePicker.addEventListener('input', updateFromNativePicker);
+
+        updateColor();
+    </script>
+</body>
+</html>

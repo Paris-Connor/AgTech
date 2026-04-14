@@ -1,3 +1,14 @@
+# AI-For-Science-2026
+
+##[Webserver](https://paris-connor.github.io/AI-For-Science-2026/)
+### Demos
+.[ChatGPTDrum.html](https://paris-connor.github.io/AI-For-Science-2026/ChatGPTDrum.html)
+.[GeminiDrums.html](https://paris-connor.github.io/AI-For-Science-2026/GeminiDrums.html)
+.[GrokDrum.html](https://paris-connor.github.io/AI-For-Science-2026/GrokDrum.html)
+.[ClaudeDrum.html](https://paris-connor.github.io/AI-For-Science-2026/ClaudeDrum.html)
+
+---
+
 # AG Tech - ESP8266 Environmental Monitor
 
 Environmental monitoring system using a Wemos D1 Mini (ESP8266) and DHT11 sensor with a live web dashboard.
@@ -35,6 +46,8 @@ AG_Tech/
 │   ├── dashboard.ino
 │   ├── config.h        # Your WiFi credentials (git-ignored)
 │   └── config.example.h
+├── sensor_scan/        # Utility: detect connected sensors
+│   └── sensor_scan.ino
 ├── docs/
 │   ├── SETUP.md        # Installation & setup guide
 │   ├── WIRING.md       # Pin reference & wiring diagrams

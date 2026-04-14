@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Edu Drum Machine ☄️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<style>
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0ff;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 100%);
+  }
+
+  h1 {
+    text-align: center;
+    margin: 0.4em 0;
+    color: #a78bfa;
+    text-shadow: 0 0 10px rgba(167,139,250,0.4);
+  }
+
+  .info {
+    max-width: 900px;
+    margin: 0 auto 1.5em;
+    font-size: 0.95rem;
+    color: #a0a0c0;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .controls {
+    text-align: center;
+    margin: 1.5em 0;
+  }
+
+  button {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    margin: 0 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.15s;
+  }
+
+  button:hover { background: #6366f1; transform: translateY(-1px); }
+  button.active { background: #c084fc; box-shadow: 0 0 12px #c084fc88; }
+
+  .bpm-control {
+    background: #1e1e38;
+    color: #ddd;
+    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 6px;
+    width: 80px;
+    text-align: center;
+  }
+
+  .sequencer {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  .row {
+    display: flex;
+    margin: 6px 0;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .pad {
+    width: 52px;
+    height: 52px;
+    background: #1e1e38;
+    border: 2px solid #333355;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pad:hover {
+    background: #2a2a4a;
+    border-color: #555577;
+  }
+
+  .pad.active {
+    background: #7c3aed;
+    border-color: #a78bfa;
+    box-shadow: 0 0 16px rgba(124,58,237,0.6);
+    transform: scale(1.08);
+  }
+
+  .pad.playing::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.35) 0%, transparent 70%);
+    animation: hit 0.4s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes hit {
+    0% { transform: scale(1.6); opacity: 0.9; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  .label {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.68rem;
+    color: #aaa;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Educational Drum Machine</h1>
+
+<div class="info">
+  Click pads to place/remove hits • Press <strong>Space</strong> or <strong>▶ Play</strong> to start/stop • 
+  Change BPM to feel different grooves • Try classic patterns!
+</div>
+
+<div class="controls">
+  <button id="playBtn">▶ Play</button>
+  <button id="clearBtn">Clear</button>
+  
+  <label>BPM: 
+    <input type="number" id="bpm" class="bpm-control" value="110" min="60" max="240" step="1"/>
+  </label>
+</div>
+
+<div class="sequencer" id="sequencer"></div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+//   EDUCATIONAL DRUM MACHINE – Single file HTML5 + Web Audio API
+// ──────────────────────────────────────────────────────────────────────────────
+
+const ROWS = [
+  { name: "Kick",   note: "C2",  color: "#ef4444" },
+  { name: "Snare",  note: "D2",  color: "#f97316" },
+  { name: "Clap",   note: "E2",  color: "#facc15" },
+  { name: "HH",     note: "F#2", color: "#22c55e" },
+  { name: "OHH",    note: "G#2", color: "#06b6d4" },
+  { name: "Crash",  note: "C3",  color: "#8b5cf6" },
+  { name: "Ride",   note: "D3",  color: "#ec4899" }
+];
+
+const STEPS = 16;
+const grid = [];
+
+// Create audio context only after user interaction (browser policy)
+let audioCtx = null;
+let isPlaying = false;
+let currentStep = 0;
+let nextStepTime = 0;
+let tempo = 110;
+let timerID = null;
+
+// Simple sample map (using very short piano-like waveforms + noise)
+const samples = {};
+
+// ─── Create simple drum sounds using Oscillator & Noise ─────────────────────
+function createDrumBuffers() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // Helper: create short buffer with decay
+  function createBuffer(duration, freq, type = "sine", decay = 0.4) {
+    const len = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for(let i = 0; i < len; i++) {
+      const t = i / audioCtx.sampleRate;
+      let v = Math.sin(2 * Math.PI * freq * t);
+      if (type === "square") v = Math.sign(v);
+      if (type === "noise") v = Math.random() * 2 - 1;
+      data[i] = v * Math.exp(-t / decay);
+    }
+    return buffer;
+  }
+
+  samples.kick  = createBuffer(0.35,  60, "sine",  0.18);
+  samples.snare = createBuffer(0.22, 180, "noise", 0.09);
+  samples.clap  = createBuffer(0.18, 220, "noise", 0.08);
+  samples.hh    = createBuffer(0.08, 3800, "noise", 0.04);
+  samples.ohh   = createBuffer(0.25, 3200, "noise", 0.12);
+  samples.crash = createBuffer(1.10, 8800, "noise", 0.45);
+  samples.ride  = createBuffer(0.80, 5800, "noise", 0.60);
+}
+
+// Play sound at given time
+function playSound(buffer, time = 0, pitchShift = 1) {
+  if (!audioCtx) return;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  src.playbackRate.value = pitchShift;
+  
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.7, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+  
+  src.connect(gain);
+  gain.connect(audioCtx.destination);
+  src.start(time);
+}
+
+function createGrid() {
+  const container = document.getElementById("sequencer");
+  container.innerHTML = "";
+
+  ROWS.forEach((instrument, row) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "row";
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = instrument.name;
+    rowEl.appendChild(label);
+
+    grid[row] = [];
+
+    for(let step = 0; step < STEPS; step++) {
+      const pad = document.createElement("div");
+      pad.className = "pad";
+      pad.dataset.row = row;
+      pad.dataset.step = step;
+
+      pad.addEventListener("click", () => {
+        pad.classList.toggle("active");
+      });
+
+      grid[row][step] = pad;
+      rowEl.appendChild(pad);
+    }
+
+    container.appendChild(rowEl);
+  });
+}
+
+function getStepTime(step) {
+  const quarterNoteDuration = 60 / tempo;
+  return step * (quarterNoteDuration / 4); // 16th notes
+}
+
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + 0.1) {
+    const step = currentStep % STEPS;
+
+    // Visual feedback
+    document.querySelectorAll(".pad.playing").forEach(el => el.classList.remove("playing"));
+
+    ROWS.forEach((inst, row) => {
+      if (grid[row][step].classList.contains("active")) {
+        const pad = grid[row][step];
+        pad.classList.add("playing");
+
+        // Different velocity / variation for some steps
+        let velocity = (step % 4 === 0) ? 1.0 : 0.85;
+        if (inst.name === "HH" && step % 2 === 1) velocity *= 0.6;
+
+        playSound(samples[inst.name.toLowerCase()], nextStepTime, velocity);
+      }
+    });
+
+    nextStepTime += getStepTime(1);
+    currentStep++;
+  }
+  timerID = requestAnimationFrame(scheduler);
+}
+
+function start() {
+  if (isPlaying) return;
+  if (!audioCtx) createDrumBuffers();
+
+  isPlaying = true;
+  currentStep = 0;
+  nextStepTime = audioCtx.currentTime + 0.05;
+  document.getElementById("playBtn").textContent = "■ Stop";
+  scheduler();
+}
+
+function stop() {
+  if (!isPlaying) return;
+  isPlaying = false;
+  cancelAnimationFrame(timerID);
+  document.getElementById("playBtn").textContent = "▶ Play";
+  document.querySelectorAll(".pad.playing").forEach(el => el.classList.remove("playing"));
+}
+
+function togglePlay() {
+  isPlaying ? stop() : start();
+}
+
+// Controls
+document.getElementById("playBtn").onclick = togglePlay;
+
+document.getElementById("clearBtn").onclick = () => {
+  document.querySelectorAll(".pad.active").forEach(p => p.classList.remove("active"));
+};
+
+document.getElementById("bpm").oninput = (e) => {
+  tempo = +e.target.value;
+  if (isPlaying) {
+    // approximate time correction (simple approach)
+    nextStepTime = audioCtx.currentTime + getStepTime(1);
+  }
+};
+
+// Spacebar to play/pause
+window.addEventListener("keydown", e => {
+  if (e.code === "Space" && !e.repeat) {
+    e.preventDefault();
+    togglePlay();
+  }
+});
+
+// Init
+createGrid();
+
+// Optional: nice classic pattern to start with (uncomment if you want)
+// kick: 1,5,9,13
+// snare: 5,13
+/*
+for(let i of [0,8]) grid[0][i].classList.add("active");     // kick
+for(let i of [4,12]) grid[0][i].classList.add("active");    // kick 2nd
+for(let i of [4,12]) grid[1][i].classList.add("active");    // snare
+for(let i = 0; i<16; i+=2) grid[3][i].classList.add("active"); // closed hh
+for(let i = 1; i<16; i+=2) grid[4][i].classList.add("active"); // open hh every other
+*/
+</script>
+</body>
+</html>

@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGuesser Educational Challenge</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .clue-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .clue-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clue-icon {
+            font-size: 28px;
+        }
+
+        .location-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: #f0f0f0;
+            display: block;
+        }
+
+        .map-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .map-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #555;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .feedback-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feedback-distance {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feedback-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .detail-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .educational-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 25px;
+            border-radius: 12px;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .edu-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .edu-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .edu-year {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .edu-facts {
+            list-style: none;
+        }
+
+        .edu-fact {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            line-height: 1.6;
+            border-left: 3px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .edu-fact:last-child {
+            margin-bottom: 0;
+        }
+
+        .start-screen, .game-over {
+            background: white;
+            border-radius: 12px;
+            padding: 60px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 100px auto;
+        }
+
+        .start-screen h2, .game-over h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .start-screen p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .game-over {
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+
+        .final-score {
+            font-size: 72px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .performance {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .game-screen.active {
+            display: block;
+        }
+
+        .instruction {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .feedback-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="start-screen" id="startScreen">
+            <h1>🌍 GeoGuesser Educational Challenge</h1>
+            <h2>Learn While You Play!</h2>
+            <p>
+                See a photo of a famous location and guess where it is on the map.<br>
+                After each guess, learn fascinating facts about history, culture, and architecture!<br>
+                The closer your guess, the more points you earn!<br>
+                <br>
+                <strong>5 Rounds • Explore • Learn • Discover</strong>
+            </p>
+            <button class="btn btn-primary" onclick="startGame()">Start Learning Adventure</button>
+        </div>
+
+        <div class="game-screen" id="gameScreen">
+            <header>
+                <h1>🌍 GeoGuesser Educational</h1>
+                <p class="subtitle">Test your knowledge and learn something new!</p>
+            </header>
+
+            <div class="game-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Round</div>
+                    <div class="stat-value" id="roundDisplay">1/5</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Score</div>
+                    <div class="stat-value" id="scoreDisplay">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Best Distance</div>
+                    <div class="stat-value" id="bestDistance">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Facts Learned</div>
+                    <div class="stat-value" id="factsLearned">0</div>
+                </div>
+            </div>
+
+            <div class="instruction">
+                Click anywhere on the map to place your guess, then submit to learn amazing facts!
+            </div>
+
+            <div class="feedback" id="feedback">
+                <div class="feedback-header">
+                    <div class="feedback-title" id="feedbackTitle">Great Guess!</div>
+                    <div class="feedback-distance" id="feedbackDistance">250 km</div>
+                </div>
+                <div class="feedback-details">
+                    <div class="detail-card">
+                        <div class="detail-label">Points Earned</div>
+                        <div class="detail-value" id="pointsEarned">850</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">Actual Location</div>
+                        <div class="detail-value" id="actualLocation">Paris</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">Accuracy</div>
+                        <div class="detail-value" id="accuracy">95%</div>
+                    </div>
+                </div>
+
+                <div class="educational-section">
+                    <div class="edu-header">
+                        <span style="font-size: 32px;">📚</span>
+                        <div>
+                            <div class="edu-title" id="eduName">Eiffel Tower</div>
+                            <span class="category-badge" id="eduCategory">Architecture</span>
+                        </div>
+                    </div>
+                    <div class="edu-year" id="eduYear">Built: 1889</div>
+                    <ul class="edu-facts" id="eduFacts">
+                        <li class="edu-fact">Fascinating fact goes here</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="game-container">
+                <div class="clue-section">
+                    <div class="clue-title">
+                        <span class="clue-icon">📸</span>
+                        <span>Where is this?</span>
+                    </div>
+                    <img id="locationImage" class="location-image" src="" alt="Mystery Location">
+                </div>
+
+                <div class="map-section">
+                    <div class="map-title">🗺️ Make Your Guess</div>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="submitBtn" onclick="submitGuess()" disabled>Submit Guess</button>
+                <button class="btn btn-secondary" id="nextBtn" onclick="nextRound()" style="display: none;">Next Round</button>
+            </div>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>🎉 Learning Adventure Complete!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="performance" id="performance">You're a geography master!</div>
+            <div style="font-size: 18px; color: #888; margin-bottom: 30px;">
+                You learned <strong id="totalFacts">0</strong> fascinating facts!
+            </div>
+            <button class="btn btn-primary" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const locations = [
+            {
+                name: "Eiffel Tower, Paris",
+                lat: 48.8584,
+                lng: 2.2945,
+                image: "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800",
+                year: "1889",
+                category: "Architecture",
+                facts: [
+                    "Originally intended as a temporary structure for the 1889 World's Fair",
+                    "Named after engineer Gustave Eiffel, whose company designed and built it",
+                    "Was the world's tallest structure for 41 years until the Chrysler Building",
+                    "Contains 20,000 light bulbs that sparkle for 5 minutes every hour after dark"
+                ]
+            },
+            {
+                name: "Great Wall, China",
+                lat: 40.4319,
+                lng: 116.5704,
+                image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800",
+                year: "7th century BC - 17th century AD",
+                category: "History",
+                facts: [
+                    "Stretches over 13,000 miles (21,000 km) across northern China",
+                    "Built over many dynasties spanning 2,000+ years",
+                    "Was designed to protect Chinese states from invasions",
+                    "Made UNESCO World Heritage Site in 1987"
+                ]
+            },
+            {
+                name: "Taj Mahal, India",
+                lat: 27.1751,
+                lng: 78.0421,
+                image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800",
+                year: "1653",
+                category: "Culture",
+                facts: [
+                    "Built by Emperor Shah Jahan as a tomb for his beloved wife Mumtaz Mahal",
+                    "Took 22 years and 20,000 workers to complete",
+                    "Made entirely of white marble inlaid with semi-precious stones",
+                    "Changes color throughout the day - pink at dawn, white at noon, golden at sunset"
+                ]
+            },
+            {
+                name: "Colosseum, Rome",
+                lat: 41.8902,
+                lng: 12.4922,
+                image: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800",
+                year: "80 AD",
+                category: "History",
+                facts: [
+                    "Could hold 50,000-80,000 spectators in its heyday",
+                    "Hosted gladiator contests, animal hunts, and mock sea battles",
+                    "Had a retractable awning system to protect from sun",
+                    "Damaged by earthquakes and stone-robbers over centuries"
+                ]
+            },
+            {
+                name: "Machu Picchu, Peru",
+                lat: -13.1631,
+                lng: -72.5450,
+                image: "https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800",
+                year: "1450 AD",
+                category: "History",
+                facts: [
+                    "Built by the Inca Empire at the height of its power",
+                    "Abandoned just 100 years later during the Spanish Conquest",
+                    "Rediscovered by American historian Hiram Bingham in 1911",
+                    "Built without mortar - stones were cut to fit together perfectly"
+                ]
+            },
+            {
+                name: "Pyramids of Giza, Egypt",
+                lat: 29.9792,
+                lng: 31.1342,
+                image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=800",
+                year: "2560 BC",
+                category: "History",
+                facts: [
+                    "The Great Pyramid is the oldest of the Seven Wonders of the Ancient World",
+                    "Built as tombs for Pharaohs Khufu, Khafre, and Menkaure",
+                    "The Great Pyramid was the tallest man-made structure for 3,800 years",
+                    "Contains approximately 2.3 million stone blocks"
+                ]
+            },
+            {
+                name: "Statue of Liberty, New York",
+                lat: 40.6892,
+                lng: -74.0445,
+                image: "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=800",
+                year: "1886",
+                category: "Culture",
+                facts: [
+                    "A gift from France to the United States celebrating freedom",
+                    "Designed by French sculptor Frédéric Auguste Bartholdi",
+                    "Made of copper sheets assembled on a steel framework by Gustave Eiffel",
+                    "The green color is from natural oxidation of copper (patina)"
+                ]
+            },
+            {
+                name: "Sydney Opera House, Australia",
+                lat: -33.8568,
+                lng: 151.2153,
+                image: "https://images.unsplash.com/photo-1523059623039-a9ed027e7fad?w=800",
+                year: "1973",
+                category: "Architecture",
+                facts: [
+                    "Took 14 years to build instead of the planned 4 years",
+                    "Uses over 1 million roof tiles from Sweden",
+                    "Hosts over 1,500 performances annually attended by 1.2 million people",
+                    "Designed by Danish architect Jørn Utzon who won an international competition"
+                ]
+            },
+            {
+                name: "Christ the Redeemer, Brazil",
+                lat: -22.9519,
+                lng: -43.2105,
+                image: "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800",
+                year: "1931",
+                category: "Culture",
+                facts: [
+                    "Stands 98 feet (30m) tall with arms spanning 92 feet (28m)",
+                    "Made of reinforced concrete and soapstone",
+                    "Has been struck by lightning multiple times",
+                    "Took 9 years to construct atop Mount Corcovado"
+                ]
+            },
+            {
+                name: "Angkor Wat, Cambodia",
+                lat: 13.4125,
+                lng: 103.8670,
+                image: "https://images.unsplash.com/photo-1570366583862-f91883984fde?w=800",
+                year: "12th century",
+                category: "Culture",
+                facts: [
+                    "The largest religious monument in the world",
+                    "Originally a Hindu temple, later transformed to Buddhist",
+                    "Built by King Suryavarman II",
+                    "Represents Mount Meru, the home of the gods in Hindu mythology"
+                ]
+            },
+            {
+                name: "Stonehenge, England",
+                lat: 51.1789,
+                lng: -1.8262,
+                image: "https://images.unsplash.com/photo-1599833975787-5fc7f5d48e27?w=800",
+                year: "3000-2000 BC",
+                category: "History",
+                facts: [
+                    "Built in several stages over 1,500 years",
+                    "Stones weigh up to 25 tons and came from 140 miles away",
+                    "Aligned with sunrise on summer solstice and sunset on winter solstice",
+                    "Purpose remains debated - possibly astronomical observatory or religious site"
+                ]
+            },
+            {
+                name: "Grand Canyon, USA",
+                lat: 36.1069,
+                lng: -112.1129,
+                image: "https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=800",
+                year: "~70 million years old",
+                category: "Nature",
+                facts: [
+                    "277 miles long, up to 18 miles wide, and over a mile deep",
+                    "Carved by the Colorado River over millions of years",
+                    "Exposes nearly 2 billion years of Earth's geological history",
+                    "Home to diverse ecosystems from desert to forest"
+                ]
+            },
+            {
+                name: "Sagrada Familia, Barcelona",
+                lat: 41.4036,
+                lng: 2.1744,
+                image: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800",
+                year: "1882-present (still under construction)",
+                category: "Architecture",
+                facts: [
+                    "Designed by Antoni Gaudí, who worked on it for 43 years",
+                    "Expected completion around 2026, 144 years after construction began",
+                    "Funded entirely by private donations and ticket sales",
+                    "When finished, will have 18 towers representing Jesus, Mary, evangelists, and apostles"
+                ]
+            },
+            {
+                name: "Mount Fuji, Japan",
+                lat: 35.3606,
+                lng: 138.7278,
+                image: "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=800",
+                year: "Sacred mountain, formed ~10,000 years ago",
+                category: "Nature",
+                facts: [
+                    "Japan's highest mountain at 12,388 feet (3,776 m)",
+                    "An active stratovolcano that last erupted in 1707",
+                    "Considered sacred in Japanese culture and Shinto religion",
+                    "Over 300,000 people climb it annually during July-August season"
+                ]
+            },
+            {
+                name: "Burj Khalifa, Dubai",
+                lat: 25.1972,
+                lng: 55.2744,
+                image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800",
+                year: "2010",
+                category: "Architecture",
+                facts: [
+                    "World's tallest building at 2,717 feet (828 m) with 163 floors",
+                    "Took 6 years to build using 330,000 cubic meters of concrete",
+                    "Has the highest observation deck in the world on 148th floor",
+                    "Can withstand earthquakes and high winds due to innovative design"
+                ]
+            },
+            {
+                name: "Petra, Jordan",
+                lat: 30.3285,
+                lng: 35.4444,
+                image: "https://images.unsplash.com/photo-1579606032821-4e6c17142986?w=800",
+                year: "312 BC",
+                category: "History",
+                facts: [
+                    "Ancient city carved directly into rose-red sandstone cliffs",
+                    "Capital of the Nabataean Kingdom",
+                    "Rediscovered in 1812 after being 'lost' for centuries",
+                    "Featured in Indiana Jones and the Last Crusade"
+                ]
+            },
+            {
+                name: "Acropolis, Athens",
+                lat: 37.9715,
+                lng: 23.7269,
+                image: "https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?w=800",
+                year: "447-438 BC (Parthenon)",
+                category: "History",
+                facts: [
+                    "The Parthenon was dedicated to goddess Athena",
+                    "Built entirely of marble from nearby Mount Pentelicus",
+                    "Survived as a Greek temple, Christian church, and Ottoman mosque",
+                    "Symbol of ancient Greek civilization and democracy"
+                ]
+            },
+            {
+                name: "Niagara Falls, Canada/USA",
+                lat: 43.0896,
+                lng: -79.0849,
+                image: "https://images.unsplash.com/photo-1489447068241-b3490214e879?w=800",
+                year: "Formed ~10,000 years ago",
+                category: "Nature",
+                facts: [
+                    "Flows at 750,000 gallons per second",
+                    "Consists of three waterfalls: Horseshoe, American, and Bridal Veil",
+                    "Erodes the rock approximately 1 foot per year",
+                    "First person to go over the falls in a barrel and survive was a 63-year-old teacher in 1901"
+                ]
+            },
+            {
+                name: "Big Ben, London",
+                lat: 51.5007,
+                lng: -0.1246,
+                image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800",
+                year: "1859",
+                category: "Architecture",
+                facts: [
+                    "Big Ben is actually the name of the bell, not the tower (officially Elizabeth Tower)",
+                    "The bell weighs 13.5 tons and chimes every hour",
+                    "Clock faces are 23 feet in diameter with minute hands 14 feet long",
+                    "Has rarely stopped - once when a flock of birds sat on the minute hand!"
+                ]
+            },
+            {
+                name: "Golden Gate Bridge, San Francisco",
+                lat: 37.8199,
+                lng: -122.4783,
+                image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800",
+                year: "1937",
+                category: "Engineering",
+                facts: [
+                    "Main span of 4,200 feet was world's longest when completed",
+                    "Iconic orange color was chosen for visibility in fog",
+                    "Painted continuously to protect from corrosion - never finished!",
+                    "Sways up to 27 feet in strong winds"
+                ]
+            },
+            {
+                name: "Leaning Tower of Pisa, Italy",
+                lat: 43.7230,
+                lng: 10.3966,
+                image: "https://images.unsplash.com/photo-1568084680786-a84f91d1153c?w=800",
+                year: "1372",
+                category: "Architecture",
+                facts: [
+                    "Began leaning during construction due to soft ground",
+                    "Took 199 years to build with multiple construction pauses",
+                    "Leans at about 4 degrees (was 5.5 before stabilization)",
+                    "Used as a laboratory by Galileo for gravity experiments"
+                ]
+            },
+            {
+                name: "St. Basil's Cathedral, Moscow",
+                lat: 55.7525,
+                lng: 37.6231,
+                image: "https://images.unsplash.com/photo-1513326738677-b964603b136d?w=800",
+                year: "1561",
+                category: "Architecture",
+                facts: [
+                    "Built by order of Ivan the Terrible to commemorate military victories",
+                    "Actually eight churches built around a ninth central church",
+                    "Each of the colorful domes is unique",
+                    "Legend says Ivan blinded the architect so he couldn't create anything more beautiful"
+                ]
+            },
+            {
+                name: "Neuschwanstein Castle, Germany",
+                lat: 47.5576,
+                lng: 10.7498,
+                image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800",
+                year: "1886",
+                category: "Architecture",
+                facts: [
+                    "Built by King Ludwig II as a retreat and homage to Richard Wagner",
+                    "Inspiration for Disney's Sleeping Beauty Castle",
+                    "King Ludwig only lived there for 172 days before his mysterious death",
+                    "Over 1.4 million people visit annually"
+                ]
+            },
+            {
+                name: "Victoria Falls, Zimbabwe/Zambia",
+                lat: -17.9243,
+                lng: 25.8572,
+                image: "https://images.unsplash.com/photo-1546369876-ca4b3e20c83e?w=800",
+                year: "Natural wonder, discovered by Europeans 1855",
+                category: "Nature",
+                facts: [
+                    "Largest waterfall in the world based on combined width and height",
+                    "Creates a mist visible from 30 miles away, earning name 'The Smoke That Thunders'",
+                    "Over 500 million liters of water plunge over the edge per minute during peak flow",
+                    "Home to a rare phenomenon: moonbows (rainbows created by moonlight)"
+                ]
+            },
+            {
+                name: "Chichen Itza, Mexico",
+                lat: 20.6843,
+                lng: -88.5678,
+                image: "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=800",
+                year: "600-1200 AD",
+                category: "History",
+                facts: [
+                    "Major city of the Mayan civilization",
+                    "El Castillo pyramid has 365 steps representing days of the year",
+                    "During equinoxes, shadow creates illusion of serpent descending the stairs",
+                    "Name means 'at the mouth of the well of the Itza'"
+                ]
+            }
+        ];
+
+        let map, guessMarker, actualMarker, guessLine;
+        let gameState = {
+            round: 1,
+            maxRounds: 5,
+            score: 0,
+            currentLocation: null,
+            guessLatLng: null,
+            usedLocations: [],
+            bestDistance: Infinity,
+            roundActive: false,
+            factsLearned: 0
+        };
+
+        function initMap() {
+            map = L.map('map').setView([20, 0], 2);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 18,
+            }).addTo(map);
+
+            map.on('click', function(e) {
+                if (!gameState.roundActive) return;
+
+                gameState.guessLatLng = e.latlng;
+
+                if (guessMarker) {
+                    map.removeLayer(guessMarker);
+                }
+
+                guessMarker = L.marker([e.latlng.lat, e.latlng.lng], {
+                    icon: L.icon({
+                        iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iNDUiIHZpZXdCb3g9IjAgMCAzMCA0NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTUgMEMxMC4wMjk0IDAgNiA0LjAyOTQzIDYgOUM2IDEzLjk3MDYgMTUgMjggMTUgMjhDMTUgMjggMjQgMTMuOTcwNiAyNCA5QzI0IDQuMDI5NDMgMTkuOTcwNiAwIDE1IDBaIiBmaWxsPSIjRkYzQjMwIi8+PGNpcmNsZSBjeD0iMTUiIGN5PSI5IiByPSI0IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
+                        iconSize: [30, 45],
+                        iconAnchor: [15, 45]
+                    })
+                }).addTo(map);
+
+                document.getElementById('submitBtn').disabled = false;
+            });
+        }
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function calculatePoints(distance) {
+            if (distance < 10) return 1000;
+            if (distance < 50) return 900;
+            if (distance < 100) return 800;
+            if (distance < 250) return 700;
+            if (distance < 500) return 600;
+            if (distance < 1000) return 400;
+            if (distance < 2500) return 200;
+            if (distance < 5000) return 100;
+            return 50;
+        }
+
+        function getRandomLocation() {
+            const available = locations.filter(loc => !gameState.usedLocations.includes(loc.name));
+            if (available.length === 0) return null;
+            const location = available[Math.floor(Math.random() * available.length)];
+            gameState.usedLocations.push(location.name);
+            return location;
+        }
+
+        function startGame() {
+            gameState = {
+                round: 1,
+                maxRounds: 5,
+                score: 0,
+                currentLocation: null,
+                guessLatLng: null,
+                usedLocations: [],
+                bestDistance: Infinity,
+                roundActive: true,
+                factsLearned: 0
+            };
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('active');
+            document.getElementById('gameOver').classList.remove('show');
+
+            if (map) {
+                map.remove();
+                map = null;
+            }
+
+            guessMarker = null;
+            actualMarker = null;
+            guessLine = null;
+
+            initMap();
+            startRound();
+        }
+
+        function startRound() {
+            gameState.roundActive = true;
+            gameState.guessLatLng = null;
+            gameState.currentLocation = getRandomLocation();
+
+            if (guessMarker) map.removeLayer(guessMarker);
+            if (actualMarker) map.removeLayer(actualMarker);
+            if (guessLine) map.removeLayer(guessLine);
+            guessMarker = null;
+
+            map.setView([20, 0], 2);
+
+            const locationImage = document.getElementById('locationImage');
+            locationImage.src = gameState.currentLocation.image;
+
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('nextBtn').style.display = 'none';
+
+            updateDisplay();
+        }
+
+        function submitGuess() {
+            if (!gameState.guessLatLng || !gameState.roundActive) return;
+
+            gameState.roundActive = false;
+
+            const distance = calculateDistance(
+                gameState.guessLatLng.lat,
+                gameState.guessLatLng.lng,
+                gameState.currentLocation.lat,
+                gameState.currentLocation.lng
+            );
+
+            const points = calculatePoints(distance);
+            gameState.score += points;
+
+            if (distance < gameState.bestDistance) {
+                gameState.bestDistance = distance;
+            }
+
+            gameState.factsLearned += gameState.currentLocation.facts.length;
+
+            actualMarker = L.marker([gameState.currentLocation.lat, gameState.currentLocation.lng], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iNDUiIHZpZXdCb3g9IjAgMCAzMCA0NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTUgMEMxMC4wMjk0IDAgNiA0LjAyOTQzIDYgOUM2IDEzLjk3MDYgMTUgMjggMTUgMjhDMTUgMjggMjQgMTMuOTcwNiAyNCA5QzI0IDQuMDI5NDMgMTkuOTcwNiAwIDE1IDBaIiBmaWxsPSIjNDBDMDU3Ii8+PGNpcmNsZSBjeD0iMTUiIGN5PSI5IiByPSI0IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
+                    iconSize: [30, 45],
+                    iconAnchor: [15, 45]
+                })
+            }).addTo(map);
+
+            guessLine = L.polyline([
+                [gameState.guessLatLng.lat, gameState.guessLatLng.lng],
+                [gameState.currentLocation.lat, gameState.currentLocation.lng]
+            ], {
+                color: '#FF3B30',
+                weight: 3,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            const bounds = L.latLngBounds([
+                [gameState.guessLatLng.lat, gameState.guessLatLng.lng],
+                [gameState.currentLocation.lat, gameState.currentLocation.lng]
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+
+            let title = '';
+            let accuracy = 0;
+
+            if (distance < 10) {
+                title = '🎯 Incredible! Nearly Perfect!';
+                accuracy = 100;
+            } else if (distance < 50) {
+                title = '🌟 Excellent Guess!';
+                accuracy = 95;
+            } else if (distance < 250) {
+                title = '👍 Great Job!';
+                accuracy = 85;
+            } else if (distance < 500) {
+                title = '✓ Good Guess!';
+                accuracy = 70;
+            } else if (distance < 1000) {
+                title = '📍 Not Bad!';
+                accuracy = 50;
+            } else if (distance < 2500) {
+                title = '🌍 Keep Trying!';
+                accuracy = 30;
+            } else {
+                title = '🗺️ Way Off!';
+                accuracy = 10;
+            }
+
+            document.getElementById('feedbackTitle').textContent = title;
+            document.getElementById('feedbackDistance').textContent = Math.round(distance) + ' km';
+            document.getElementById('pointsEarned').textContent = points;
+            document.getElementById('actualLocation').textContent = gameState.currentLocation.name;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+
+            // Educational content
+            document.getElementById('eduName').textContent = gameState.currentLocation.name;
+            document.getElementById('eduCategory').textContent = gameState.currentLocation.category;
+            document.getElementById('eduYear').textContent = 'Built: ' + gameState.currentLocation.year;
+
+            const factsList = document.getElementById('eduFacts');
+            factsList.innerHTML = '';
+            gameState.currentLocation.facts.forEach(fact => {
+                const li = document.createElement('li');
+                li.className = 'edu-fact';
+                li.textContent = fact;
+                factsList.appendChild(li);
+            });
+
+            document.getElementById('feedback').classList.add('show');
+
+            document.getElementById('submitBtn').style.display = 'none';
+
+            if (gameState.round < gameState.maxRounds) {
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                setTimeout(endGame, 2000);
+            }
+
+            updateDisplay();
+        }
+
+        function nextRound() {
+            gameState.round++;
+            startRound();
+        }
+
+        function endGame() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('gameOver').classList.add('show');
+
+            const avgScore = gameState.score / gameState.maxRounds;
+            let performance = '';
+
+            if (avgScore >= 800) {
+                performance = '🏆 Outstanding! You\'re a geography master!';
+            } else if (avgScore >= 600) {
+                performance = '🌟 Excellent work! Impressive knowledge!';
+            } else if (avgScore >= 400) {
+                performance = '👍 Good job! Keep exploring!';
+            } else {
+                performance = '🗺️ Nice try! Play again to improve!';
+            }
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('performance').textContent = performance;
+            document.getElementById('totalFacts').textContent = gameState.factsLearned;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function updateDisplay() {
+            document.getElementById('roundDisplay').textContent = `${gameState.round}/${gameState.maxRounds}`;
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('bestDistance').textContent =
+                gameState.bestDistance === Infinity ? '-' : Math.round(gameState.bestDistance) + ' km';
+            document.getElementById('factsLearned').textContent = gameState.factsLearned;
+        }
+    </script>
+</body>
+</html>
