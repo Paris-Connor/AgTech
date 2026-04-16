@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AG Tech - Plant Monitor</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;padding:16px;max-width:600px;margin:0 auto}
+    h1{text-align:center;margin-bottom:4px;color:#38bdf8;font-size:1.4em}
+    .subtitle{text-align:center;color:#64748b;font-size:.8em;margin-bottom:16px}
+    .connect-bar{background:#1e293b;border-radius:12px;padding:12px;margin-bottom:12px;display:flex;gap:8px;align-items:center}
+    .connect-bar input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:.85em}
+    .connect-bar button{padding:8px 16px;border-radius:8px;border:none;background:#38bdf8;color:#0f172a;font-weight:bold;cursor:pointer;font-size:.85em;white-space:nowrap}
+    .connect-bar button:hover{background:#7dd3fc}
+    .connect-status{font-size:.7em;color:#64748b;text-align:center;margin-bottom:8px}
+    .connect-status.live{color:#4ade80}
+    .connect-status.demo{color:#fbbf24}
+    .status-bar{border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;font-weight:bold;font-size:1.1em;transition:background .5s}
+    .status-ok{background:#166534;color:#4ade80}
+    .status-warn{background:#854d0e;color:#fbbf24}
+    .status-danger{background:#991b1b;color:#fca5a5;animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+    .section{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px}
+    .section-title{font-size:.8em;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+    .cards{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+    .card{flex:1;min-width:100px;background:#0f172a;border-radius:8px;padding:14px;text-align:center}
+    .card .value{font-size:1.8em;font-weight:bold}
+    .card .label{font-size:.7em;color:#94a3b8;margin-top:2px}
+    .card .range{font-size:.6em;color:#475569;margin-top:4px}
+    .temp .value{color:#f97316}
+    .hum .value{color:#22d3ee}
+    .lux .value{color:#fbbf24}
+    .chart-box{background:#0f172a;border-radius:8px;padding:12px;margin-top:10px}
+    .chart-label{font-size:.75em;color:#64748b;margin-bottom:4px}
+    canvas{width:100%!important;height:110px!important}
+    .thresholds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:.75em}
+    .th-item{background:#0f172a;border-radius:6px;padding:8px;display:flex;justify-content:space-between}
+    .th-label{color:#94a3b8}
+    .th-ok{color:#4ade80}
+    .th-warn{color:#fbbf24}
+    .log{background:#0f172a;border-radius:8px;padding:10px;max-height:150px;overflow-y:auto;font-family:monospace;font-size:.7em;margin-top:10px}
+    .log div{padding:2px 0;border-bottom:1px solid #1e293b}
+    .log .log-ok{color:#4ade80}
+    .log .log-warn{color:#fbbf24}
+    .log .log-danger{color:#f87171}
+    .footer{text-align:center;font-size:.7em;color:#334155;margin-top:12px}
+    .footer a{color:#38bdf8}
+  </style>
+</head>
+<body>
+  <h1>AG Tech Plant Monitor</h1>
+  <div class="subtitle">Wemos D1 Mini + DHT11 + GY-30</div>
+
+  <div class="connect-bar">
+    <input type="text" id="ip" placeholder="D1 Mini IP (e.g. 192.168.1.50)">
+    <button onclick="toggleConnect()">Connect</button>
+  </div>
+  <div class="connect-status demo" id="cs">Running in demo mode with simulated data</div>
+
+  <div class="status-bar status-ok" id="sb">All Sensors OK</div>
+  <div class="section">
+    <div class="section-title">Live Readings</div>
+    <div class="cards">
+      <div class="card temp"><div class="value" id="t">--</div><div class="label">Temp C</div><div class="range">Safe: 10-30</div></div>
+      <div class="card hum"><div class="value" id="h">--</div><div class="label">Humidity %</div><div class="range">Safe: 30-70</div></div>
+      <div class="card lux"><div class="value" id="l">--</div><div class="label">Light (lux)</div><div class="range">Safe: 500-50k</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">History (last 4 min)</div>
+    <div class="chart-box"><div class="chart-label">Temperature (C)</div><canvas id="tc"></canvas></div>
+    <div class="chart-box" style="margin-top:8px"><div class="chart-label">Humidity (%)</div><canvas id="hc"></canvas></div>
+    <div class="chart-box" style="margin-top:8px"><div class="chart-label">Light (lux)</div><canvas id="lc"></canvas></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Thresholds</div>
+    <div class="thresholds">
+      <div class="th-item"><span class="th-label">Temp OK</span><span class="th-ok">10-30 C</span></div>
+      <div class="th-item"><span class="th-label">Temp Warn</span><span class="th-warn">5-10 / 30-35</span></div>
+      <div class="th-item"><span class="th-label">Hum OK</span><span class="th-ok">30-70%</span></div>
+      <div class="th-item"><span class="th-label">Hum Warn</span><span class="th-warn">20-30 / 70-80</span></div>
+      <div class="th-item"><span class="th-label">Light OK</span><span class="th-ok">500-50k lux</span></div>
+      <div class="th-item"><span class="th-label">Light Warn</span><span class="th-warn">&lt;500 / &gt;50k</span></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Event Log</div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="footer">
+    LED: Green=OK | Yellow=Warning | Red=Danger<br>
+    <a href="https://github.com/Paris-Connor/AgTech">View on GitHub</a>
+  </div>
+
+<script>
+let liveIP = null;
+let interval = null;
+
+// Demo data generators
+let demoTemp = 23.5, demoHum = 45, demoLux = 12000;
+let demoTempHist = [], demoHumHist = [], demoLuxHist = [];
+for(let i=0;i<60;i++){
+  demoTempHist.push(22+Math.random()*3);
+  demoHumHist.push(40+Math.random()*15);
+  demoLuxHist.push(8000+Math.random()*10000);
+}
+
+function genDemo(){
+  demoTemp += (Math.random()-0.5)*0.4;
+  demoTemp = Math.max(15,Math.min(35,demoTemp));
+  demoHum += (Math.random()-0.5)*2;
+  demoHum = Math.max(20,Math.min(80,demoHum));
+  demoLux += (Math.random()-0.5)*2000;
+  demoLux = Math.max(100,Math.min(60000,demoLux));
+  demoTempHist.push(demoTemp);
+  demoHumHist.push(demoHum);
+  demoLuxHist.push(demoLux);
+  if(demoTempHist.length>120)demoTempHist.shift();
+  if(demoHumHist.length>120)demoHumHist.shift();
+  if(demoLuxHist.length>120)demoLuxHist.shift();
+
+  let status='ok';
+  if(demoTemp>=35||demoTemp<=5||demoHum>=80||demoHum<=20)status='danger';
+  else if(demoTemp>=30||demoTemp<=10||demoHum>=70||demoHum<=30)status='warn';
+
+  return {
+    temp:demoTemp,hum:demoHum,lux:demoLux,status:status,
+    tempHistory:demoTempHist,humHistory:demoHumHist,luxHistory:demoLuxHist
+  };
+}
+
+function toggleConnect(){
+  let ip=document.getElementById('ip').value.trim();
+  let cs=document.getElementById('cs');
+  if(liveIP){
+    liveIP=null;
+    cs.textContent='Running in demo mode with simulated data';
+    cs.className='connect-status demo';
+    document.querySelector('.connect-bar button').textContent='Connect';
+  } else if(ip){
+    liveIP=ip;
+    cs.textContent='Connecting to '+ip+'...';
+    cs.className='connect-status';
+    document.querySelector('.connect-bar button').textContent='Disconnect';
+  }
+}
+
+function dc(cv,data,color,mn,mx){
+  let ctx=cv.getContext('2d');let w=cv.width=cv.offsetWidth*2;let h=cv.height=cv.offsetHeight*2;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#1e293b';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){let y=h*i/4;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
+  ctx.fillStyle='#475569';ctx.font='18px sans-serif';
+  let v=mx-(mx-mn)*i/4;
+  ctx.fillText(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(1),4,y+14);}
+  if(data.length<2)return;ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();
+  for(let i=0;i<data.length;i++){let x=i/(120-1)*w;let y=h-((data[i]-mn)/(mx-mn))*h;
+  if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();
+}
+
+function update(d){
+  document.getElementById('t').textContent=d.temp.toFixed(1);
+  document.getElementById('h').textContent=d.hum.toFixed(1);
+  document.getElementById('l').textContent=d.lux>=1000?(d.lux/1000).toFixed(1)+'k':d.lux.toFixed(0);
+
+  let sb=document.getElementById('sb');
+  sb.className='status-bar status-'+d.status;
+  if(d.status==='ok') sb.textContent='All Sensors OK';
+  else if(d.status==='warn') sb.textContent='Warning - Check Conditions';
+  else sb.textContent='DANGER - Immediate Attention Needed';
+
+  if(d.tempHistory.length>1){
+    let a=d.tempHistory,b=d.humHistory,c=d.luxHistory;
+    dc(document.getElementById('tc'),a,'#f97316',
+      Math.min(0,Math.floor(Math.min(...a)-5)),Math.max(40,Math.ceil(Math.max(...a)+5)));
+    dc(document.getElementById('hc'),b,'#22d3ee',
+      Math.min(0,Math.floor(Math.min(...b)-10)),Math.max(100,Math.ceil(Math.max(...b)+10)));
+    if(c&&c.length>1)
+      dc(document.getElementById('lc'),c,'#fbbf24',
+        Math.max(0,Math.floor(Math.min(...c)*0.8)),Math.ceil(Math.max(...c)*1.2+1));
+  }
+
+  let log=document.getElementById('log');
+  let now=new Date().toLocaleTimeString();
+  let entry=document.createElement('div');
+  entry.className='log-'+d.status;
+  let lx=d.lux>=1000?(d.lux/1000).toFixed(1)+'k':d.lux.toFixed(0);
+  let msg=now+'  T:'+d.temp.toFixed(1)+'C  H:'+d.hum.toFixed(1)+'%  L:'+lx+'lux';
+  if(d.status!=='ok') msg+='  ['+d.status.toUpperCase()+']';
+  entry.textContent=msg;
+  log.insertBefore(entry,log.firstChild);
+  if(log.children.length>50)log.removeChild(log.lastChild);
+}
+
+function tick(){
+  if(liveIP){
+    fetch('http://'+liveIP+'/data',{mode:'cors'})
+      .then(r=>r.json())
+      .then(d=>{
+        update(d);
+        let cs=document.getElementById('cs');
+        cs.textContent='Connected to '+liveIP+' (live data)';
+        cs.className='connect-status live';
+      })
+      .catch(()=>{
+        let cs=document.getElementById('cs');
+        cs.textContent='Cannot reach '+liveIP+' - showing demo data';
+        cs.className='connect-status demo';
+        update(genDemo());
+      });
+  } else {
+    update(genDemo());
+  }
+}
+
+tick();
+setInterval(tick,2000);
+</script>
+</body>
+</html>
