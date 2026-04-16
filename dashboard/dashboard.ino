@@ -15,7 +15,7 @@ const char* password = WIFI_PASS;
 
 #define RED_PIN   12  // D6
 #define GREEN_PIN 13  // D7
-#define BLUE_PIN   5  // D1
+#define BLUE_PIN  15  // D8
 #define DHTPIN    14  // D5
 #define DHTTYPE DHT11
 
