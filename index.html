@@ -1,134 +1,233 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AG Tech - Plant Monitor</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;padding:16px;max-width:600px;margin:0 auto}
-    h1{text-align:center;margin-bottom:4px;color:#38bdf8;font-size:1.4em}
-    .subtitle{text-align:center;color:#64748b;font-size:.8em;margin-bottom:16px}
-    .connect-bar{background:#1e293b;border-radius:12px;padding:12px;margin-bottom:12px}
-    .connect-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-    .connect-row:last-child{margin-bottom:0}
-    .connect-bar input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:.85em}
-    .connect-bar button{padding:8px 16px;border-radius:8px;border:none;background:#38bdf8;color:#0f172a;font-weight:bold;cursor:pointer;font-size:.85em;white-space:nowrap}
-    .connect-bar button:hover{background:#7dd3fc}
-    .connect-bar label{font-size:.7em;color:#94a3b8;min-width:70px}
-    .connect-status{font-size:.7em;color:#64748b;text-align:center;margin-bottom:8px}
-    .connect-status.live{color:#4ade80}
-    .connect-status.cloud{color:#38bdf8}
-    .connect-status.demo{color:#fbbf24}
-    .status-bar{border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;font-weight:bold;font-size:1.1em;transition:background .5s}
-    .status-ok{background:#166534;color:#4ade80}
-    .status-warn{background:#854d0e;color:#fbbf24}
-    .status-danger{background:#991b1b;color:#fca5a5;animation:pulse 1s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
-    .section{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px}
-    .section-title{font-size:.8em;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
-    .cards{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-    .card{flex:1;min-width:70px;background:#0f172a;border-radius:8px;padding:12px 8px;text-align:center}
-    .card .value{font-size:1.5em;font-weight:bold}
-    .card .label{font-size:.65em;color:#94a3b8;margin-top:2px}
-    .card .range{font-size:.55em;color:#475569;margin-top:4px}
-    .temp .value{color:#f97316}
-    .hum .value{color:#22d3ee}
-    .lux .value{color:#fbbf24}
-    .soil .value{color:#4ade80}
-    .na{opacity:.4}
-    .chart-box{background:#0f172a;border-radius:8px;padding:12px;margin-top:10px}
-    .chart-label{font-size:.75em;color:#64748b;margin-bottom:4px}
-    canvas{width:100%!important;height:100px!important}
-    .thresholds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:.75em}
-    .th-item{background:#0f172a;border-radius:6px;padding:8px;display:flex;justify-content:space-between}
-    .th-label{color:#94a3b8}
-    .th-ok{color:#4ade80}
-    .th-warn{color:#fbbf24}
-    .log{background:#0f172a;border-radius:8px;padding:10px;max-height:150px;overflow-y:auto;font-family:monospace;font-size:.65em;margin-top:10px}
-    .log div{padding:2px 0;border-bottom:1px solid #1e293b}
-    .log .log-ok{color:#4ade80}
-    .log .log-warn{color:#fbbf24}
-    .log .log-danger{color:#f87171}
-    .footer{text-align:center;font-size:.7em;color:#334155;margin-top:12px}
-    .footer a{color:#38bdf8}
-  </style>
-</head>
-<body>
-  <h1>AG Tech Plant Monitor</h1>
-  <div class="subtitle">DHT11 + GY-30 + Soil Moisture</div>
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AG Tech - Plant Monitor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#f0f7f0;color:#1a3a1a;min-height:100vh}
+.wrap{display:flex;max-width:1100px;margin:0 auto;padding:16px;gap:16px}
+.main{flex:1;min-width:0}
+.side{width:300px;flex-shrink:0}
+h1{color:#2d6a2d;font-size:1.6em;margin-bottom:2px}
+h1 span{color:#5a9a5a}
+.sub{color:#6b8f6b;font-size:.8em;margin-bottom:14px}
+.connect-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;border:1px solid #c8e0c8;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.connect-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.connect-row:last-child{margin-bottom:0}
+.connect-bar input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid #b0d0b0;background:#f8fcf8;color:#1a3a1a;font-size:.85em}
+.connect-bar button{padding:8px 16px;border-radius:8px;border:none;background:#2d6a2d;color:#fff;font-weight:bold;cursor:pointer;font-size:.85em;white-space:nowrap}
+.connect-bar button:hover{background:#3d8a3d}
+.connect-bar label{font-size:.7em;color:#6b8f6b;min-width:70px}
+.connect-status{font-size:.7em;color:#6b8f6b;text-align:center;margin-bottom:8px}
+.connect-status.live{color:#16a34a}
+.connect-status.cloud{color:#2563eb}
+.connect-status.demo{color:#ca8a04}
+.plant-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #c8e0c8;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.plant-bar label{font-size:.85em;color:#3d6b3d;font-weight:600}
+.plant-bar select{flex:1;padding:8px 12px;border-radius:8px;border:1px solid #b0d0b0;background:#f8fcf8;color:#1a3a1a;font-size:.9em}
+.status-bar{border-radius:12px;padding:12px 16px;margin-bottom:14px;text-align:center;font-weight:700;font-size:1em;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.status-ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.status-warn{background:#fef9c3;color:#854d0e;border:1px solid #fde047}
+.status-danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.section{background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #c8e0c8;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section-title{font-size:.75em;color:#5a9a5a;margin-bottom:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.cards{display:flex;gap:10px;flex-wrap:wrap}
+.card{flex:1;min-width:90px;background:#f0f7f0;border-radius:10px;padding:14px 10px;text-align:center;border:1px solid #d4e8d4}
+.card .value{font-size:1.7em;font-weight:700}
+.card .label{font-size:.7em;color:#6b8f6b;margin-top:2px}
+.card .range{font-size:.6em;color:#8aaa8a;margin-top:4px}
+.temp .value{color:#ea580c}
+.hum .value{color:#0891b2}
+.lux .value{color:#ca8a04}
+.soil .value{color:#16a34a}
+.na{opacity:.3}
+.chart-box{background:#f8fcf8;border-radius:8px;padding:10px;margin-top:8px;border:1px solid #d4e8d4}
+.chart-label{font-size:.7em;color:#6b8f6b;margin-bottom:4px}
+canvas{width:100%!important;height:85px!important}
+.log{background:#f8fcf8;border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;font-family:monospace;font-size:.65em;border:1px solid #d4e8d4;margin-top:8px}
+.log div{padding:3px 0;border-bottom:1px solid #e8f0e8}
+.log .log-ok{color:#16a34a}
+.log .log-warn{color:#ca8a04}
+.log .log-danger{color:#dc2626}
+.side-section{background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #c8e0c8;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.plant-name{font-size:1.3em;font-weight:700;color:#2d6a2d;margin-bottom:4px}
+.plant-aka{font-size:.75em;color:#6b8f6b;margin-bottom:12px;font-style:italic}
+.plant-desc{font-size:.8em;color:#3d6b3d;line-height:1.5;margin-bottom:14px}
+.care-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.care-item{background:#f0f7f0;border-radius:8px;padding:10px;border:1px solid #d4e8d4}
+.care-item .ci-label{font-size:.65em;color:#6b8f6b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.care-item .ci-value{font-size:.85em;color:#2d6a2d;font-weight:600}
+.care-item .ci-range{font-size:.7em;color:#5a9a5a;margin-top:2px}
+.th-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:.75em}
+.th-item{background:#f0f7f0;border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;border:1px solid #d4e8d4}
+.th-label{color:#6b8f6b}
+.th-ok{color:#16a34a}
+.th-warn{color:#ca8a04}
+.led-info{margin-top:14px;font-size:.75em;color:#6b8f6b;text-align:center}
+.led-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 2px;vertical-align:middle}
+.footer{text-align:center;font-size:.65em;color:#8aaa8a;margin-top:12px;padding:0 16px 16px}
+.footer a{color:#2d6a2d}
+</style>
+</head><body>
+<div class="wrap">
+<div class="main">
+<h1>AG <span>Tech</span></h1>
+<div class="sub">Smart Plant Monitor</div>
 
-  <div class="connect-bar">
-    <div class="connect-row">
-      <label>ThingSpeak</label>
-      <input type="text" id="tsChannel" placeholder="Channel ID">
-      <input type="text" id="tsKey" placeholder="Read API Key">
-    </div>
-    <div class="connect-row">
-      <label>Local IP</label>
-      <input type="text" id="ip" placeholder="e.g. 192.168.1.50">
-      <button onclick="applySettings()">Connect</button>
-    </div>
-  </div>
-  <div class="connect-status demo" id="cs">Running in demo mode with simulated data</div>
+<div class="connect-bar">
+<div class="connect-row">
+<label>ThingSpeak</label>
+<input type="text" id="tsChannel" placeholder="Channel ID">
+<input type="text" id="tsKey" placeholder="Read API Key">
+</div>
+<div class="connect-row">
+<label>Local IP</label>
+<input type="text" id="ip" placeholder="e.g. 192.168.1.50">
+<button onclick="applySettings()">Connect</button>
+</div>
+</div>
+<div class="connect-status demo" id="cs">Running in demo mode with simulated data</div>
 
-  <div class="status-bar status-ok" id="sb">All Sensors OK</div>
-  <div class="section">
-    <div class="section-title">Live Readings</div>
-    <div class="cards">
-      <div class="card temp"><div class="value" id="t">--</div><div class="label">Temp C</div><div class="range">10-30</div></div>
-      <div class="card hum"><div class="value" id="h">--</div><div class="label">Humidity</div><div class="range">30-70%</div></div>
-      <div class="card lux"><div class="value" id="l">--</div><div class="label">Light</div><div class="range">500-50k</div></div>
-      <div class="card soil"><div class="value" id="s">--</div><div class="label">Soil %</div><div class="range">25-80%</div></div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">History</div>
-    <div class="chart-box"><div class="chart-label">Temperature (C)</div><canvas id="tc"></canvas></div>
-    <div class="chart-box" style="margin-top:8px"><div class="chart-label">Humidity (%)</div><canvas id="hc"></canvas></div>
-    <div class="chart-box" style="margin-top:8px"><div class="chart-label">Light (lux)</div><canvas id="lc"></canvas></div>
-    <div class="chart-box" style="margin-top:8px"><div class="chart-label">Soil Moisture (%)</div><canvas id="sc"></canvas></div>
-  </div>
-  <div class="section">
-    <div class="section-title">Thresholds</div>
-    <div class="thresholds">
-      <div class="th-item"><span class="th-label">Temp OK</span><span class="th-ok">10-30 C</span></div>
-      <div class="th-item"><span class="th-label">Temp Warn</span><span class="th-warn">5-10 / 30-35</span></div>
-      <div class="th-item"><span class="th-label">Hum OK</span><span class="th-ok">30-70%</span></div>
-      <div class="th-item"><span class="th-label">Hum Warn</span><span class="th-warn">20-30 / 70-80</span></div>
-      <div class="th-item"><span class="th-label">Light OK</span><span class="th-ok">500-50k lux</span></div>
-      <div class="th-item"><span class="th-label">Light Warn</span><span class="th-warn">&lt;200 / &gt;80k</span></div>
-      <div class="th-item"><span class="th-label">Soil OK</span><span class="th-ok">25-80%</span></div>
-      <div class="th-item"><span class="th-label">Soil Warn</span><span class="th-warn">&lt;15 / &gt;90</span></div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">Event Log</div>
-    <div class="log" id="log"></div>
-  </div>
-  <div class="footer">
-    LED: Green=OK | Yellow=Warning | Red=Danger<br>
-    <a href="https://github.com/Paris-Connor/AgTech">View on GitHub</a>
-  </div>
+<div class="plant-bar">
+<label>Plant Profile:</label>
+<select id="pp" onchange="setPlant()">
+<option value="fittonia">Fittonia (Nerve Plant)</option>
+<option value="pothos">Pothos</option>
+<option value="snake">Snake Plant</option>
+<option value="succulent">Succulent / Cactus</option>
+<option value="basil">Basil</option>
+<option value="tomato">Tomato</option>
+</select>
+</div>
+
+<div class="status-bar status-ok" id="sb">All Sensors OK</div>
+<div class="section">
+<div class="section-title">Live Readings</div>
+<div class="cards">
+<div class="card temp"><div class="value" id="t">--</div><div class="label">Temp (F)</div><div class="range" id="tr"></div></div>
+<div class="card hum"><div class="value" id="h">--</div><div class="label">Humidity</div><div class="range" id="hr"></div></div>
+<div class="card lux"><div class="value" id="l">--</div><div class="label">Light</div><div class="range" id="lr"></div></div>
+<div class="card soil"><div class="value" id="s">--</div><div class="label">Soil</div><div class="range" id="sr"></div></div>
+</div>
+</div>
+<div class="section">
+<div class="section-title">History</div>
+<div class="chart-box"><div class="chart-label">Temperature (F)</div><canvas id="tc"></canvas></div>
+<div class="chart-box" style="margin-top:6px"><div class="chart-label">Humidity (%)</div><canvas id="hc"></canvas></div>
+<div class="chart-box" style="margin-top:6px"><div class="chart-label">Light (lux)</div><canvas id="lc"></canvas></div>
+<div class="chart-box" style="margin-top:6px"><div class="chart-label">Soil Moisture (%)</div><canvas id="sc"></canvas></div>
+</div>
+<div class="section">
+<div class="section-title">Event Log</div>
+<div class="log" id="log"></div>
+</div>
+</div>
+<div class="side">
+<div class="side-section">
+<div class="plant-name" id="pn">Fittonia</div>
+<div class="plant-aka" id="pa">Nerve Plant</div>
+<div class="plant-desc" id="pd">A tropical plant known for its striking veined leaves. Thrives in warm, humid environments with indirect light. Prefers consistently moist soil but not waterlogged. Great for terrariums.</div>
+</div>
+<div class="side-section">
+<div class="section-title">Ideal Conditions</div>
+<div class="care-grid">
+<div class="care-item"><div class="ci-label">Temperature</div><div class="ci-value" id="ct"></div><div class="ci-range" id="ctr"></div></div>
+<div class="care-item"><div class="ci-label">Humidity</div><div class="ci-value" id="ch"></div><div class="ci-range" id="chr"></div></div>
+<div class="care-item"><div class="ci-label">Light</div><div class="ci-value" id="cl"></div><div class="ci-range" id="clr"></div></div>
+<div class="care-item"><div class="ci-label">Soil Moisture</div><div class="ci-value" id="ccs"></div><div class="ci-range" id="csr"></div></div>
+</div>
+</div>
+<div class="side-section">
+<div class="section-title">Thresholds</div>
+<div class="th-grid" id="thd"></div>
+</div>
+<div class="led-info">
+<div class="led-dot" style="background:#22c55e"></div> OK
+<div class="led-dot" style="background:#eab308"></div> Warning
+<div class="led-dot" style="background:#ef4444"></div> Danger
+</div>
+</div>
+</div>
+<div class="footer"><a href="https://github.com/Paris-Connor/AgTech">View on GitHub</a></div>
 
 <script>
+const P={
+fittonia:{name:'Fittonia',aka:'Nerve Plant',desc:'A tropical plant known for its striking veined leaves. Thrives in warm, humid environments with indirect light. Prefers consistently moist soil but not waterlogged. Great for terrariums.',
+  t:[55,65,75,85],h:[25,45,65,75],l:[100,250,1000,1500],s:[25,40,75,85],
+  care:{t:'65-75 F',h:'45-65%',l:'Low-Medium',s:'Moist'}},
+pothos:{name:'Pothos',aka:"Devil's Ivy",desc:'An easy-care trailing vine that tolerates a wide range of conditions. Excellent air purifier. Prefers moderate indirect light but adapts to low light. Let soil dry slightly between waterings.',
+  t:[55,60,85,90],h:[30,40,60,70],l:[200,500,10000,15000],s:[20,30,60,75],
+  care:{t:'60-85 F',h:'40-60%',l:'Low-Bright',s:'Moderate'}},
+snake:{name:'Snake Plant',aka:'Sansevieria',desc:'One of the hardiest houseplants. Tolerates neglect, low light, and infrequent watering. Excellent air purifier that also releases oxygen at night. Perfect for beginners.',
+  t:[55,60,85,95],h:[20,30,50,65],l:[100,300,10000,20000],s:[10,15,35,50],
+  care:{t:'60-85 F',h:'30-50%',l:'Any',s:'Dry'}},
+succulent:{name:'Succulent',aka:'Cactus / Succulent',desc:'Desert-adapted plants that store water in thick leaves. Need bright direct light and very infrequent watering. Plant in well-draining soil. Let dry completely between waterings.',
+  t:[45,50,90,95],h:[15,25,50,65],l:[2000,5000,50000,80000],s:[5,10,25,40],
+  care:{t:'50-90 F',h:'25-50%',l:'Bright/Direct',s:'Very Dry'}},
+basil:{name:'Basil',aka:'Sweet Basil',desc:'A popular culinary herb that loves warmth and sunshine. Needs at least 6 hours of direct light daily. Keep soil consistently damp. Pinch flowers to encourage leaf growth.',
+  t:[55,60,85,90],h:[30,40,60,75],l:[3000,5000,40000,60000],s:[35,45,70,85],
+  care:{t:'60-85 F',h:'40-60%',l:'Full Sun',s:'Damp'}},
+tomato:{name:'Tomato',aka:'Solanum lycopersicum',desc:'A warm-season fruiting plant that demands full sun and consistent moisture. Needs support as it grows. Feed regularly during fruiting. Sensitive to cold temperatures.',
+  t:[55,62,82,90],h:[40,50,75,85],l:[5000,10000,50000,80000],s:[40,50,70,80],
+  care:{t:'62-82 F',h:'50-75%',l:'Full Sun',s:'Even Moist'}}
+};
+let cp=P.fittonia;
 let mode='demo',liveIP=null,tsChannel=null,tsKey=null;
-let dT=23.5,dH=45,dL=12000,dS=55;
+let dT=72,dH=50,dL=800,dS=55;
 let dTH=[],dHH=[],dLH=[],dSH=[];
-for(let i=0;i<60;i++){dTH.push(22+Math.random()*3);dHH.push(40+Math.random()*15);dLH.push(8000+Math.random()*10000);dSH.push(40+Math.random()*20);}
+for(let i=0;i<60;i++){dTH.push(68+Math.random()*8);dHH.push(40+Math.random()*15);dLH.push(400+Math.random()*800);dSH.push(40+Math.random()*20);}
 
 function genDemo(){
-  dT+=(Math.random()-.5)*.4;dT=Math.max(15,Math.min(35,dT));
+  dT+=(Math.random()-.5)*.6;dT=Math.max(55,Math.min(90,dT));
   dH+=(Math.random()-.5)*2;dH=Math.max(20,Math.min(80,dH));
-  dL+=(Math.random()-.5)*2000;dL=Math.max(100,Math.min(60000,dL));
+  dL+=(Math.random()-.5)*200;dL=Math.max(50,Math.min(2000,dL));
   dS+=(Math.random()-.5)*1.5;dS=Math.max(5,Math.min(95,dS));
   dTH.push(dT);dHH.push(dH);dLH.push(dL);dSH.push(dS);
   if(dTH.length>120)dTH.shift();if(dHH.length>120)dHH.shift();
   if(dLH.length>120)dLH.shift();if(dSH.length>120)dSH.shift();
-  let st='ok';
-  if(dT>=35||dT<=5||dH>=80||dH<=20||dS<=15||dS>=90)st='danger';
-  else if(dT>=30||dT<=10||dH>=70||dH<=30||dS<=25||dS>=80)st='warn';
-  return{temp:dT,hum:dH,lux:dL,soil:dS,status:st,tempHistory:dTH,humHistory:dHH,luxHistory:dLH,soilHistory:dSH};
+  return{temp:dT,hum:dH,lux:dL,soil:dS,tempHistory:dTH,humHistory:dHH,luxHistory:dLH,soilHistory:dSH};
+}
+
+function setPlant(){
+  let k=document.getElementById('pp').value;cp=P[k];
+  document.getElementById('pn').textContent=cp.name;
+  document.getElementById('pa').textContent=cp.aka;
+  document.getElementById('pd').textContent=cp.desc;
+  document.getElementById('tr').textContent=cp.t[1]+'-'+cp.t[2]+'F';
+  document.getElementById('hr').textContent=cp.h[1]+'-'+cp.h[2]+'%';
+  document.getElementById('lr').textContent=cp.l[1]+'-'+cp.l[2];
+  document.getElementById('sr').textContent=cp.s[1]+'-'+cp.s[2]+'%';
+  document.getElementById('ct').textContent=cp.care.t;
+  document.getElementById('ctr').textContent='Warn: <'+cp.t[1]+' / >'+cp.t[2];
+  document.getElementById('ch').textContent=cp.care.h;
+  document.getElementById('chr').textContent='Warn: <'+cp.h[1]+' / >'+cp.h[2];
+  document.getElementById('cl').textContent=cp.care.l;
+  document.getElementById('clr').textContent='Warn: <'+cp.l[1]+' / >'+cp.l[2];
+  document.getElementById('ccs').textContent=cp.care.s;
+  document.getElementById('csr').textContent='Warn: <'+cp.s[1]+' / >'+cp.s[2];
+  let th=document.getElementById('thd');
+  th.innerHTML='<div class="th-item"><span class="th-label">Temp OK</span><span class="th-ok">'+cp.t[1]+'-'+cp.t[2]+' F</span></div>'+
+  '<div class="th-item"><span class="th-label">Temp Warn</span><span class="th-warn">'+cp.t[0]+' / '+cp.t[3]+'</span></div>'+
+  '<div class="th-item"><span class="th-label">Hum OK</span><span class="th-ok">'+cp.h[1]+'-'+cp.h[2]+'%</span></div>'+
+  '<div class="th-item"><span class="th-label">Hum Warn</span><span class="th-warn">'+cp.h[0]+' / '+cp.h[3]+'</span></div>'+
+  '<div class="th-item"><span class="th-label">Light OK</span><span class="th-ok">'+cp.l[1]+'-'+cp.l[2]+'</span></div>'+
+  '<div class="th-item"><span class="th-label">Light Warn</span><span class="th-warn">'+cp.l[0]+' / '+cp.l[3]+'</span></div>'+
+  '<div class="th-item"><span class="th-label">Soil OK</span><span class="th-ok">'+cp.s[1]+'-'+cp.s[2]+'%</span></div>'+
+  '<div class="th-item"><span class="th-label">Soil Warn</span><span class="th-warn">'+cp.s[0]+' / '+cp.s[3]+'</span></div>';
+  localStorage.setItem('agtech_plant',k);
+}
+
+function evalSt(d){
+  let p=cp;
+  if(d.temp<=p.t[0]||d.temp>=p.t[3])return'danger';
+  if(d.hum<=p.h[0]||d.hum>=p.h[3])return'danger';
+  if(d.soil>=0&&(d.soil<=p.s[0]||d.soil>=p.s[3]))return'danger';
+  if(d.lux>=0&&(d.lux<=p.l[0]||d.lux>=p.l[3]))return'danger';
+  if(d.temp<=p.t[1]||d.temp>=p.t[2])return'warn';
+  if(d.hum<=p.h[1]||d.hum>=p.h[2])return'warn';
+  if(d.soil>=0&&(d.soil<=p.s[1]||d.soil>=p.s[2]))return'warn';
+  if(d.lux>=0&&(d.lux<=p.l[1]||d.lux>=p.l[2]))return'warn';
+  return'ok';
 }
 
 function applySettings(){
@@ -143,23 +242,24 @@ function applySettings(){
   localStorage.setItem('agtech_ip',ip);
 }
 
-// Restore saved settings
 (function(){
   let ch=localStorage.getItem('agtech_ts_channel')||'';
   let key=localStorage.getItem('agtech_ts_key')||'';
   let ip=localStorage.getItem('agtech_ip')||'';
+  let pl=localStorage.getItem('agtech_plant')||'fittonia';
   document.getElementById('tsChannel').value=ch;
   document.getElementById('tsKey').value=key;
   document.getElementById('ip').value=ip;
+  document.getElementById('pp').value=pl;
   if(ip){mode='local';liveIP=ip;}
   else if(ch&&key){mode='cloud';tsChannel=ch;tsKey=key;}
 })();
 
 function dc(cv,data,color,mn,mx){
   let ctx=cv.getContext('2d');let w=cv.width=cv.offsetWidth*2;let h=cv.height=cv.offsetHeight*2;
-  ctx.clearRect(0,0,w,h);ctx.strokeStyle='#1e293b';ctx.lineWidth=1;
+  ctx.clearRect(0,0,w,h);ctx.strokeStyle='#d4e8d4';ctx.lineWidth=1;
   for(let i=0;i<=4;i++){let y=h*i/4;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
-  ctx.fillStyle='#475569';ctx.font='18px sans-serif';let v=mx-(mx-mn)*i/4;
+  ctx.fillStyle='#8aaa8a';ctx.font='18px sans-serif';let v=mx-(mx-mn)*i/4;
   ctx.fillText(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(1),4,y+14);}
   if(data.length<2)return;ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.beginPath();
   for(let i=0;i<data.length;i++){let x=i/(120-1)*w;let y=h-((data[i]-mn)/(mx-mn))*h;
@@ -167,35 +267,36 @@ function dc(cv,data,color,mn,mx){
 }
 
 function display(d){
+  let st=evalSt(d);
   document.getElementById('t').textContent=d.temp.toFixed(1);
   document.getElementById('h').textContent=d.hum.toFixed(1);
   let le=document.getElementById('l');
   if(d.lux>=0){le.textContent=d.lux>=1000?(d.lux/1000).toFixed(1)+'k':d.lux.toFixed(0);le.parentElement.classList.remove('na');}
   else{le.textContent='N/A';le.parentElement.classList.add('na');}
   let se=document.getElementById('s');
-  if(d.soil>=0){se.textContent=d.soil.toFixed(0);se.parentElement.classList.remove('na');}
+  if(d.soil>=0){se.textContent=d.soil.toFixed(0)+'%';se.parentElement.classList.remove('na');}
   else{se.textContent='N/A';se.parentElement.classList.add('na');}
-  let sb=document.getElementById('sb');sb.className='status-bar status-'+d.status;
-  if(d.status==='ok')sb.textContent='All Sensors OK';
-  else if(d.status==='warn')sb.textContent='Warning - Check Conditions';
-  else sb.textContent='DANGER - Immediate Attention Needed';
+  let sb=document.getElementById('sb');sb.className='status-bar status-'+st;
+  if(st==='ok')sb.textContent='All Sensors OK - Your plant is happy!';
+  else if(st==='warn')sb.textContent='Warning - Check conditions';
+  else sb.textContent='DANGER - Immediate attention needed!';
   if(d.tempHistory&&d.tempHistory.length>1){
-    dc(document.getElementById('tc'),d.tempHistory,'#f97316',
-      Math.min(0,Math.floor(Math.min(...d.tempHistory)-5)),Math.max(40,Math.ceil(Math.max(...d.tempHistory)+5)));
-    dc(document.getElementById('hc'),d.humHistory,'#22d3ee',
+    dc(document.getElementById('tc'),d.tempHistory,'#ea580c',
+      Math.min(32,Math.floor(Math.min(...d.tempHistory)-5)),Math.max(100,Math.ceil(Math.max(...d.tempHistory)+5)));
+    dc(document.getElementById('hc'),d.humHistory,'#0891b2',
       Math.min(0,Math.floor(Math.min(...d.humHistory)-10)),Math.max(100,Math.ceil(Math.max(...d.humHistory)+10)));
     if(d.luxHistory&&d.luxHistory.length>1&&d.luxHistory[0]>=0)
-      dc(document.getElementById('lc'),d.luxHistory,'#fbbf24',
-        Math.max(0,Math.floor(Math.min(...d.luxHistory)*0.8)),Math.ceil(Math.max(...d.luxHistory)*1.2+1));
+      dc(document.getElementById('lc'),d.luxHistory,'#ca8a04',
+        Math.max(0,Math.floor(Math.min(...d.luxHistory)*.8)),Math.ceil(Math.max(...d.luxHistory)*1.2+1));
     if(d.soilHistory&&d.soilHistory.length>1&&d.soilHistory[0]>=0)
-      dc(document.getElementById('sc'),d.soilHistory,'#4ade80',0,100);
+      dc(document.getElementById('sc'),d.soilHistory,'#16a34a',0,100);
   }
   let log=document.getElementById('log');let now=new Date().toLocaleTimeString();
-  let entry=document.createElement('div');entry.className='log-'+d.status;
+  let entry=document.createElement('div');entry.className='log-'+st;
   let lx=d.lux>=0?(d.lux>=1000?(d.lux/1000).toFixed(1)+'k':d.lux.toFixed(0))+'lux':'--';
   let sl=d.soil>=0?d.soil.toFixed(0)+'%':'--';
-  let msg=now+'  T:'+d.temp.toFixed(1)+'C  H:'+d.hum.toFixed(1)+'%  L:'+lx+'  S:'+sl;
-  if(d.status!=='ok')msg+='  ['+d.status.toUpperCase()+']';
+  let msg=now+' T:'+d.temp.toFixed(1)+'F H:'+d.hum.toFixed(1)+'% L:'+lx+' S:'+sl;
+  if(st!=='ok')msg+=' ['+st.toUpperCase()+']';
   entry.textContent=msg;log.insertBefore(entry,log.firstChild);
   if(log.children.length>50)log.removeChild(log.lastChild);
 }
@@ -206,18 +307,12 @@ function fetchThingSpeak(){
   fetch(url).then(r=>r.json()).then(j=>{
     if(!j.feeds||j.feeds.length===0)throw'empty';
     let last=j.feeds[j.feeds.length-1];
-    let temp=parseFloat(last.field1)||0;
-    let hum=parseFloat(last.field2)||0;
-    let lux=parseFloat(last.field3)||-1;
-    let soil=parseFloat(last.field4)||-1;
+    let temp=parseFloat(last.field1)||0,hum=parseFloat(last.field2)||0;
+    let lux=parseFloat(last.field3)||-1,soil=parseFloat(last.field4)||-1;
     let tH=[],hH=[],lH=[],sH=[];
     j.feeds.forEach(f=>{tH.push(parseFloat(f.field1)||0);hH.push(parseFloat(f.field2)||0);
       lH.push(parseFloat(f.field3)||-1);sH.push(parseFloat(f.field4)||-1);});
-    let st='ok';
-    if(temp>=35||temp<=5||hum>=80||hum<=20)st='danger';
-    else if(temp>=30||temp<=10||hum>=70||hum<=30)st='warn';
-    if(soil>=0){if(soil<=15||soil>=90)st='danger';else if(soil<=25||soil>=80)st=st==='danger'?'danger':'warn';}
-    display({temp,hum,lux,soil,status:st,tempHistory:tH,humHistory:hH,luxHistory:lH,soilHistory:sH});
+    display({temp,hum,lux,soil,tempHistory:tH,humHistory:hH,luxHistory:lH,soilHistory:sH});
     let cs=document.getElementById('cs');
     cs.textContent='Connected to ThingSpeak (channel '+tsChannel+')';cs.className='connect-status cloud';
   }).catch(()=>{
@@ -233,14 +328,13 @@ function tick(){
     fetch('http://'+liveIP+'/data',{mode:'cors'}).then(r=>r.json()).then(d=>{
       display(d);cs.textContent='Connected to '+liveIP+' (live)';cs.className='connect-status live';
     }).catch(()=>{cs.textContent='Cannot reach '+liveIP+' - showing demo';cs.className='connect-status demo';display(genDemo());});
-  } else if(mode==='cloud'){
+  }else if(mode==='cloud'){
     fetchThingSpeak();
-  } else {
+  }else{
     cs.textContent='Demo mode - simulated data';cs.className='connect-status demo';
     display(genDemo());
   }
 }
-tick();setInterval(tick,mode==='cloud'?15000:2000);
+setPlant();tick();setInterval(tick,mode==='cloud'?15000:2000);
 </script>
-</body>
-</html>
+</body></html>
