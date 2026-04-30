@@ -4,11 +4,12 @@
 
 - Wemos D1 Mini (ESP8266)
 - DHT11 temperature/humidity sensor (3-pin module)
-- GY-30 / BH1750 light intensity sensor (I2C)
+- LM393 light sensor module (digital output)
 - Capacitive soil moisture sensor (analog)
 - RGB LED (common cathode) + 3x 220 ohm resistors
 - Breadboard + jumper wires
 - Micro-USB cable
+- USB power source (wall charger, power bank, or any 5V USB port - no computer needed once flashed)
 
 ## Software Installation
 
@@ -38,16 +39,17 @@ arduino-cli core install esp8266:esp8266
 ### 4. Install libraries
 
 ```bash
-arduino-cli lib install "DHT sensor library" "Adafruit Unified Sensor" "BH1750"
+arduino-cli lib install "DHT sensor library" "Adafruit Unified Sensor" "BH1750" "WiFiManager"
 ```
 
-### 5. Configure WiFi and ThingSpeak
+### 5. Configure ThingSpeak (optional)
 
 ```bash
 cp dashboard/config.example.h dashboard/config.h
 ```
 
-Edit `config.h` with your WiFi credentials and ThingSpeak Write API key.
+Edit `config.h` to add your ThingSpeak Write API key if you want cloud push.
+**WiFi is not configured here** - it's set at first boot via the captive portal.
 
 ### 6. Compile and upload
 
@@ -56,9 +58,19 @@ arduino-cli compile --fqbn esp8266:esp8266:d1_mini dashboard
 arduino-cli upload --fqbn esp8266:esp8266:d1_mini --port /dev/cu.usbserial-XXXXXXXX dashboard
 ```
 
-### 7. Find the dashboard
+### 7. Connect to WiFi (no computer needed)
 
-Open serial monitor at 115200 baud to see the IP address, then open it in a browser.
+After the upload finishes:
+
+1. The D1 Mini's RGB LED turns **magenta** - this means it needs WiFi setup.
+2. On your phone, connect to the WiFi network **`AG-Tech-Setup`** (no password).
+3. A captive portal page opens automatically. If it doesn't, browse to `192.168.4.1`.
+4. Tap **Configure WiFi** -> choose your network -> enter password -> Save.
+5. The D1 Mini reboots and connects. LED flashes green when online.
+
+### 8. Find the dashboard
+
+The IP address will be printed on serial (115200 baud) at boot, or check your router's connected-clients list. The same IP serves the dashboard - just open it in any browser on the same network.
 
 ## ThingSpeak Setup
 
@@ -67,6 +79,22 @@ Open serial monitor at 115200 baud to see the IP address, then open it in a brow
 3. Copy the **Write API Key** into `dashboard/config.h`
 4. Copy the **Channel ID** and **Read API Key** for the GitHub Pages dashboard
 5. Open https://paris-connor.github.io/AgTech/ and enter the Channel ID + Read API Key
+
+## Running Without a Computer
+
+Once flashed, the D1 Mini doesn't need a computer. Plug it into any USB power source:
+
+- USB wall charger (best for permanent install)
+- USB power bank (portable - lasts a few days)
+- Any 5V USB port
+
+It will auto-connect to its saved WiFi and start serving the dashboard. To check on it remotely:
+
+- Local: open `http://<d1-ip>` in a browser on the same network
+- Cloud: ThingSpeak channel (if configured)
+- GitHub Pages: `https://paris-connor.github.io/AgTech/`
+
+If the LED is magenta, it can't reach the saved network - configure via the captive portal as in step 7.
 
 ## Soil Moisture Calibration
 
@@ -87,8 +115,10 @@ To calibrate for your soil:
 | `bad CPU type in executable` | Install Rosetta 2 |
 | Board not detected | Try a different USB cable |
 | `Failed to read from DHT11` | Check wiring: DATA to D5, VCC to 3.3V, GND |
-| WiFi won't connect | Verify SSID/password. D1 only supports 2.4GHz |
-| GY-30 not found | Check solder joints, verify SDA=D2 SCL=D1 |
+| WiFi won't connect | Use the captive portal (see step 7). D1 only supports 2.4GHz networks |
+| LED stays magenta | No saved WiFi - connect phone to `AG-Tech-Setup` and configure |
+| Need to switch networks | Just power on at the new location - if old network isn't found, the portal reappears automatically |
+| LM393 always reads same value | Adjust the small potentiometer on the sensor module to set the bright/dark threshold |
 | Soil reads N/A | Sensor not connected or A0 reads 1023 (open circuit) |
 | ThingSpeak fails | Check API key, ensure WiFi connected, 15s minimum interval |
 | Serial shows garbage | Ensure baud rate is 115200 |

@@ -11,13 +11,13 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+#include <DNSServer.h>
+#include <WiFiManager.h>
 #include <DHT.h>
 #include <Wire.h>
 #include <BH1750.h>
 
 #include "config.h"
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASS;
 
 #define RED_PIN   12
 #define GREEN_PIN 13
@@ -394,9 +394,18 @@ void setup(){
   float st=readSoilPercent();
   if(st>=0){soilSensorOk=true;Serial.println("Soil sensor found!");}
   else Serial.println("Soil sensor not found");
-  WiFi.begin(ssid,password);
+  WiFiManager wm;
+  wm.setAPCallback([](WiFiManager* m){
+    setLED(512,0,512);
+    Serial.println("\n>>> Setup mode: connect phone to WiFi 'AG-Tech-Setup' to configure <<<");
+  });
+  setLED(0,0,512);
   Serial.print("Connecting to WiFi");
-  while(WiFi.status()!=WL_CONNECTED){setLED(0,0,512);delay(250);setLED(0,0,0);delay(250);Serial.print(".");}
+  if(!wm.autoConnect("AG-Tech-Setup")){
+    Serial.println("Setup timeout — restarting");
+    setLED(1023,0,0); delay(2000);
+    ESP.restart();
+  }
   Serial.println("\nConnected! IP: "+WiFi.localIP().toString());
   setLED(0,1023,0);delay(500);
   server.on("/",handleRoot);server.on("/data",handleData);
