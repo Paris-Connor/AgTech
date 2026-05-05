@@ -8,7 +8,7 @@ Real-time environmental monitoring for plants using a Wemos D1 Mini (ESP8266) wi
 
 This short screen recording shows the Smart Plant Monitor dashboard receiving live sensor data from ThingSpeak and updating the plant status in real time.
 
-[Watch the dashboard demo](sensor_scan/agtech-dashboard-demo.mp4)
+[Watch the dashboard demo]([sensor_scan/agtech-dashboard-demo.mp4](https://drive.google.com/file/d/1kr4Sfnud-IzO30_XrJVZkMX8ME2iDoAL/view?usp=sharing))
 
 ## Features
 
